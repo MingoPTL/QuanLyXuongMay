@@ -156,7 +156,7 @@ public class LoginFrame {
         btnLogin.setOnAction(e -> handleLogin());
 
         // Keyboard press Enter
-        txtLoginUser.setOnAction(e -> handleLogin());
+        txtLoginUser.setOnAction(e -> txtLoginPass.requestFocus());
         txtLoginPass.setOnAction(e -> handleLogin());
 
         HBox footer = new HBox(6);

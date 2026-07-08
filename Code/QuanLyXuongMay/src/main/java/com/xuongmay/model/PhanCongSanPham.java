@@ -8,6 +8,8 @@ public class PhanCongSanPham {
     private NhanVien nhanVien;
     private LocalDate ngayPhanCong;
 
+    private String soLuong;
+
     public PhanCongSanPham() {}
 
     public PhanCongSanPham(String maPhanCong, SanPham sanPham, NhanVien nhanVien, LocalDate ngayPhanCong) {
@@ -15,6 +17,15 @@ public class PhanCongSanPham {
         this.sanPham = sanPham;
         this.nhanVien = nhanVien;
         this.ngayPhanCong = ngayPhanCong;
+        this.soLuong = "Tất cả";
+    }
+
+    public PhanCongSanPham(String maPhanCong, SanPham sanPham, NhanVien nhanVien, LocalDate ngayPhanCong, String soLuong) {
+        this.maPhanCong = maPhanCong;
+        this.sanPham = sanPham;
+        this.nhanVien = nhanVien;
+        this.ngayPhanCong = ngayPhanCong;
+        this.soLuong = soLuong;
     }
 
     public String getMaPhanCong() {
@@ -47,5 +58,13 @@ public class PhanCongSanPham {
 
     public void setNgayPhanCong(LocalDate ngayPhanCong) {
         this.ngayPhanCong = ngayPhanCong;
+    }
+
+    public String getSoLuong() {
+        return soLuong;
+    }
+
+    public void setSoLuong(String soLuong) {
+        this.soLuong = soLuong;
     }
 }

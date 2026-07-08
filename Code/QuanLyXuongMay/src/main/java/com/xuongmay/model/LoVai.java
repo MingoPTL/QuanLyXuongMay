@@ -12,6 +12,7 @@ public class LoVai {
     private double giaNhap;
     private String ghiChu;
     private TrangThaiLoVai trangThaiLoVai;
+    private String hinhAnh; // image file path
 
     public LoVai() {}
 
@@ -97,6 +98,14 @@ public class LoVai {
 
     public void setTrangThaiLoVai(TrangThaiLoVai trangThaiLoVai) {
         this.trangThaiLoVai = trangThaiLoVai;
+    }
+
+    public String getHinhAnh() {
+        return hinhAnh;
+    }
+
+    public void setHinhAnh(String hinhAnh) {
+        this.hinhAnh = hinhAnh;
     }
 
     @Override

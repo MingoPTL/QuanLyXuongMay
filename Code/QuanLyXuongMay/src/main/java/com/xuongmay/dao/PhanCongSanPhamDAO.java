@@ -16,9 +16,9 @@ public class PhanCongSanPhamDAO {
         List<SanPham> sps = spDao.getAll();
         List<NhanVien> nvs = nvDao.getAll();
         if (sps.size() >= 2 && nvs.size() >= 5) {
-            list.add(new PhanCongSanPham("PC001", sps.get(0), nvs.get(0), LocalDate.now().minusDays(5)));
-            list.add(new PhanCongSanPham("PC002", sps.get(1), nvs.get(1), LocalDate.now().minusDays(4)));
-            list.add(new PhanCongSanPham("PC003", sps.get(0), nvs.get(3), LocalDate.now().minusDays(3)));
+            list.add(new PhanCongSanPham("PC001", sps.get(0), nvs.get(0), LocalDate.now().minusDays(5), "100"));
+            list.add(new PhanCongSanPham("PC002", sps.get(1), nvs.get(1), LocalDate.now().minusDays(4), "Tất cả"));
+            list.add(new PhanCongSanPham("PC003", sps.get(0), nvs.get(3), LocalDate.now().minusDays(3), "50"));
         }
     }
 

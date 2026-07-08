@@ -61,6 +61,13 @@ public class NguyenLieuService {
     }
 
     public void deleteLoVai(String id) {
+        // Unassign all CayVais belonging to this lot and reset their layers to 0
+        List<CayVai> rolls = cvDao.getByLoVaiId(id);
+        for (CayVai cv : rolls) {
+            cv.setLoVai(null);
+            cv.setLuotTraiVai(0);
+            cvDao.update(cv);
+        }
         loDao.delete(id);
     }
 

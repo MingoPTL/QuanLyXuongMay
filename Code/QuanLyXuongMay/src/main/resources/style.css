@@ -998,3 +998,127 @@
     -fx-alignment: center-left;
 }
 
+/* === FABRIC LOT CARDS === */
+.fabric-card {
+    -fx-background-color: -color-bg-card;
+    -fx-background-radius: 12;
+    -fx-border-color: -color-border-light;
+    -fx-border-width: 1;
+    -fx-border-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.03), 10, 0, 0, 2);
+    -fx-cursor: hand;
+    -fx-pref-width: 210;
+    -fx-min-width: 210;
+    -fx-pref-height: 270;
+    -fx-min-height: 270;
+}
+
+.fabric-card:hover {
+    -fx-border-color: -color-accent;
+}
+
+.fabric-card-image-placeholder {
+    -fx-background-color: linear-gradient(to bottom right, #f8fafc, #cbd5e1); /* Slate 50 to Gray 300 */
+    -fx-background-radius: 11 11 0 0;
+    -fx-alignment: center;
+    -fx-pref-height: 130;
+    -fx-min-height: 130;
+}
+
+.fabric-card-info {
+    -fx-padding: 10 12 12 12;
+    -fx-spacing: 5;
+}
+
+.fabric-card-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1e293b; /* Slate 800 */
+}
+
+.fabric-card-detail {
+    -fx-font-size: 11px;
+    -fx-text-fill: #64748b; /* Slate 500 */
+}
+
+.fabric-card-badge {
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 6;
+    -fx-background-radius: 99;
+}
+
+.fabric-card-hover-overlay {
+    -fx-background-color: rgba(15, 23, 42, 0.82); /* Slate 900 semi-transparent */
+    -fx-background-radius: 12;
+    -fx-alignment: center;
+    -fx-spacing: 12;
+}
+
+.card-btn {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 8 16;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+    -fx-text-fill: white;
+    -fx-border-width: 0;
+}
+
+.card-btn-view {
+    -fx-background-color: -color-accent;
+}
+.card-btn-view:hover {
+    -fx-background-color: -color-accent-hover;
+}
+
+.card-btn-options {
+    -fx-background-color: -color-secondary;
+}
+.card-btn-options:hover {
+    -fx-background-color: -color-secondary-hover;
+}
+
+/* === PANEL SCROLL PANE WRAPPER === */
+.panel-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+.panel-scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+.panel-scroll-pane > .scroll-bar:vertical {
+    -fx-pref-width: 8px;
+    -fx-background-color: transparent;
+}
+.panel-scroll-pane > .scroll-bar:horizontal {
+    -fx-pref-height: 8px;
+    -fx-background-color: transparent;
+}
+.panel-scroll-pane > .scroll-bar .thumb {
+    -fx-background-color: #c1c9d4;
+    -fx-background-radius: 8px;
+}
+.panel-scroll-pane > .scroll-bar .thumb:hover {
+    -fx-background-color: #94a3b8;
+}
+.panel-scroll-pane > .scroll-bar .thumb:pressed {
+    -fx-background-color: #6366f1;
+}
+.panel-scroll-pane > .scroll-bar .track {
+    -fx-background-color: transparent;
+}
+.panel-scroll-pane > .scroll-bar .increment-button,
+.panel-scroll-pane > .scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+.panel-scroll-pane > .scroll-bar .increment-arrow,
+.panel-scroll-pane > .scroll-bar .decrement-arrow {
+    -fx-shape: " ";
+    -fx-padding: 0;
+}
+

@@ -168,6 +168,51 @@ public class KhachHangPanel extends VBox {
 
         btnClear.setOnAction(e -> clearForm());
 
+        // Context Menu (Hidden Menu) khi click chuột phải vào dòng khách hàng
+        tableKh.setRowFactory(tv -> {
+            TableRow<KhachHang> row = new TableRow<>();
+            ContextMenu contextMenu = new ContextMenu();
+            
+            MenuItem editItem = new MenuItem("Chỉnh sửa");
+            editItem.setOnAction(event -> {
+                KhachHang rowData = row.getItem();
+                if (rowData != null) {
+                    tableKh.getSelectionModel().select(rowData);
+                }
+            });
+            
+            MenuItem deleteItem = new MenuItem("Xóa Khách Hàng");
+            deleteItem.setOnAction(event -> {
+                KhachHang rowData = row.getItem();
+                if (rowData != null) {
+                    tableKh.getSelectionModel().select(rowData);
+                    btnDelete.fire();
+                }
+            });
+            
+            MenuItem copyPhoneItem = new MenuItem("Sao chép số điện thoại");
+            copyPhoneItem.setOnAction(event -> {
+                KhachHang rowData = row.getItem();
+                if (rowData != null && rowData.getSdt() != null) {
+                    javafx.scene.input.Clipboard clipboard = javafx.scene.input.Clipboard.getSystemClipboard();
+                    javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+                    content.putString(rowData.getSdt());
+                    clipboard.setContent(content);
+                }
+            });
+
+            contextMenu.getItems().addAll(editItem, deleteItem, new SeparatorMenuItem(), copyPhoneItem);
+
+            row.emptyProperty().addListener((obs, wasEmpty, isEmpty) -> {
+                if (isEmpty) {
+                    row.setContextMenu(null);
+                } else {
+                    row.setContextMenu(contextMenu);
+                }
+            });
+            return row;
+        });
+
         refreshData();
     }
 

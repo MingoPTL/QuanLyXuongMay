@@ -8,6 +8,7 @@ import javafx.animation.Interpolator;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
@@ -27,6 +28,15 @@ public class MainFrame {
     private HeThongPanel heThongPanel;
     private KhachHangPanel khachHangPanel;
     private HoaDonPanel hoaDonPanel;
+
+    // ScrollPane wrappers
+    private ScrollPane scrollTongQuan;
+    private ScrollPane scrollNguyenLieu;
+    private ScrollPane scrollSanPham;
+    private ScrollPane scrollNhanSu;
+    private ScrollPane scrollHeThong;
+    private ScrollPane scrollKhachHang;
+    private ScrollPane scrollHoaDon;
 
     // Sidebar buttons
     private Button btnTongQuan;
@@ -241,6 +251,16 @@ public class MainFrame {
         stage.setMaximized(true);
     }
 
+    private ScrollPane wrapInScroll(javafx.scene.Node panel) {
+        ScrollPane sp = new ScrollPane(panel);
+        sp.setFitToWidth(true);
+        sp.setFitToHeight(true);
+        sp.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        sp.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        sp.getStyleClass().add("panel-scroll-pane");
+        return sp;
+    }
+
     private void initPanels() {
         tongQuanPanel = new TongQuanPanel();
         nguyenLieuPanel = new NguyenLieuPanel();
@@ -250,23 +270,38 @@ public class MainFrame {
         khachHangPanel = new KhachHangPanel();
         hoaDonPanel = new HoaDonPanel();
 
+        scrollTongQuan   = wrapInScroll(tongQuanPanel);
+        scrollNguyenLieu = wrapInScroll(nguyenLieuPanel);
+        scrollSanPham    = wrapInScroll(sanPhamPanel);
+        scrollNhanSu     = wrapInScroll(nhanSuPanel);
+        scrollHeThong    = wrapInScroll(heThongPanel);
+        scrollKhachHang  = wrapInScroll(khachHangPanel);
+        scrollHoaDon     = wrapInScroll(hoaDonPanel);
+
         contentArea.getChildren().addAll(
-            tongQuanPanel, nguyenLieuPanel, sanPhamPanel, nhanSuPanel, heThongPanel, khachHangPanel, hoaDonPanel
+            scrollTongQuan, scrollNguyenLieu, scrollSanPham,
+            scrollNhanSu, scrollHeThong, scrollKhachHang, scrollHoaDon
         );
     }
 
     private void showPanel(Pane panel, Button activeButton) {
-        // Hide all panels
-        tongQuanPanel.setVisible(false);
-        nguyenLieuPanel.setVisible(false);
-        sanPhamPanel.setVisible(false);
-        nhanSuPanel.setVisible(false);
-        heThongPanel.setVisible(false);
-        khachHangPanel.setVisible(false);
-        hoaDonPanel.setVisible(false);
+        // Hide all scroll panes
+        scrollTongQuan.setVisible(false);
+        scrollNguyenLieu.setVisible(false);
+        scrollSanPham.setVisible(false);
+        scrollNhanSu.setVisible(false);
+        scrollHeThong.setVisible(false);
+        scrollKhachHang.setVisible(false);
+        scrollHoaDon.setVisible(false);
 
-        // Show active panel
-        panel.setVisible(true);
+        // Show scroll pane of the matching panel
+        if (panel == tongQuanPanel)       scrollTongQuan.setVisible(true);
+        else if (panel == nguyenLieuPanel) scrollNguyenLieu.setVisible(true);
+        else if (panel == sanPhamPanel)   scrollSanPham.setVisible(true);
+        else if (panel == nhanSuPanel)    scrollNhanSu.setVisible(true);
+        else if (panel == heThongPanel)   scrollHeThong.setVisible(true);
+        else if (panel == khachHangPanel) scrollKhachHang.setVisible(true);
+        else if (panel == hoaDonPanel)    scrollHoaDon.setVisible(true);
 
         // Reset sidebar button styles
         btnTongQuan.getStyleClass().remove("sidebar-button-active");
