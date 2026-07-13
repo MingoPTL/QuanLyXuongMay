@@ -2,11 +2,13 @@ package com.xuongmay.ui.panel;
 
 import com.xuongmay.service.ThongKeService;
 import com.xuongmay.service.ThongKeService.*;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
@@ -365,6 +367,169 @@ public class ThongKePanel extends VBox {
                 String.valueOf(k.soDonHang), formatMoney(k.tongTien)));
         }
         if (topKH.isEmpty()) tableTopKH.getChildren().add(emptyRow("Chưa có dữ liệu"));
+
+        final XYChart.Series<String, Number> finalLineSeries = lineSeries;
+        final XYChart.Series<Number, String> finalSpSeries = spSeries;
+        final XYChart.Series<String, Number> finalSeriesDK = seriesDK;
+        final XYChart.Series<String, Number> finalSeriesTT = seriesTT;
+        final List<SanPhamStat> finalTopSP = topSP;
+
+        Platform.runLater(() -> Platform.runLater(() -> {
+            addLineChartInteractivity(finalLineSeries);
+            addBarTopSPInteractivity(finalSpSeries, finalTopSP);
+            addBarCongSuatInteractivity(finalSeriesDK, finalSeriesTT);
+            addPieChartInteractivity();
+        }));
+    }
+
+    // ── Chart Interactivity ───────────────────────────────────────────
+
+    private void addLineChartInteractivity(XYChart.Series<String, Number> series) {
+        for (XYChart.Data<String, Number> data : series.getData()) {
+            Node node = data.getNode();
+            if (node != null) {
+                bindLineNode(data, node);
+            }
+            data.nodeProperty().addListener((obs, old, n) -> {
+                if (n != null) bindLineNode(data, n);
+            });
+        }
+    }
+
+    private void bindLineNode(XYChart.Data<String, Number> data, Node node) {
+        String tip = data.getXValue() + "\n" + formatMoney(data.getYValue().doubleValue());
+        Tooltip.install(node, createTooltip(tip));
+        String baseStyle = "-fx-background-color: #1e40af, white; -fx-background-insets: 0,2; -fx-background-radius: 5em; -fx-padding: 5px;";
+        String hoverStyle = "-fx-background-color: #f59e0b, white; -fx-background-insets: 0,2; -fx-background-radius: 5em; -fx-padding: 7px; -fx-effect: dropshadow(gaussian,rgba(245,158,11,0.6),8,0,0,0);";
+        node.setStyle(baseStyle);
+        node.setOnMouseEntered(e -> node.setStyle(hoverStyle));
+        node.setOnMouseExited(e  -> node.setStyle(baseStyle));
+    }
+
+    private void addBarTopSPInteractivity(XYChart.Series<Number, String> series, List<SanPhamStat> topSP) {
+        for (int i = 0; i < series.getData().size(); i++) {
+            XYChart.Data<Number, String> data = series.getData().get(i);
+            final int idx = i;
+            final SanPhamStat stat = idx < topSP.size() ? topSP.get(idx) : null;
+            if (stat == null) continue;
+
+            Node node = data.getNode();
+            if (node != null) {
+                bindBarTopSPNode(node, stat, idx);
+            }
+            data.nodeProperty().addListener((obs, old, n) -> {
+                if (n != null) bindBarTopSPNode(n, stat, idx);
+            });
+        }
+    }
+
+    private void bindBarTopSPNode(Node node, SanPhamStat stat, int idx) {
+        String tip = "📦 " + stat.tenSanPham +
+                     "\nSL: " + stat.soLuongRi + " ri" +
+                     "\nDoanh thu: " + formatMoney(stat.doanhThu);
+        Tooltip.install(node, createTooltip(tip));
+
+        node.setOnMouseEntered(e -> {
+            node.setStyle("-fx-bar-fill: #f59e0b; -fx-effect: dropshadow(gaussian,rgba(245,158,11,0.5),8,0,0,0);");
+            highlightTableRow(tableTopSP, idx + 1);
+        });
+        node.setOnMouseExited(e -> {
+            node.setStyle("");
+            resetTableHighlight(tableTopSP);
+        });
+        node.setOnMouseClicked(e -> highlightTableRow(tableTopSP, idx + 1));
+    }
+
+    private void addBarCongSuatInteractivity(
+            XYChart.Series<String, Number> seriesDK,
+            XYChart.Series<String, Number> seriesTT) {
+
+        String[] labels = {"Dự kiến", "Thực tế"};
+        String[] hoverColors = {"#2563eb", "#059669"};
+
+        for (int s = 0; s < 2; s++) {
+            XYChart.Series<String, Number> series = s == 0 ? seriesDK : seriesTT;
+            final String label = labels[s];
+            final String hoverColor = hoverColors[s];
+
+            for (XYChart.Data<String, Number> data : series.getData()) {
+                Node node = data.getNode();
+                if (node != null) {
+                    bindBarCongSuatNode(node, data, label, hoverColor);
+                }
+                data.nodeProperty().addListener((obs, old, n) -> {
+                    if (n != null) bindBarCongSuatNode(n, data, label, hoverColor);
+                });
+            }
+        }
+    }
+
+    private void bindBarCongSuatNode(Node node, XYChart.Data<String, Number> data, String label, String hoverColor) {
+        String tip = label + "\n" + data.getXValue() + ": " + data.getYValue().intValue() + " ri";
+        Tooltip.install(node, createTooltip(tip));
+        node.setOnMouseEntered(e -> node.setStyle("-fx-bar-fill: " + hoverColor +
+            "; -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.3),8,0,0,0);"));
+        node.setOnMouseExited(e  -> node.setStyle(""));
+    }
+
+    private void addPieChartInteractivity() {
+        double total = pieChart.getData().stream().mapToDouble(PieChart.Data::getPieValue).sum();
+        for (PieChart.Data slice : pieChart.getData()) {
+            Node node = slice.getNode();
+            if (node != null) {
+                bindPieSliceNode(node, slice, total);
+            }
+            slice.nodeProperty().addListener((obs, old, n) -> {
+                if (n != null) bindPieSliceNode(n, slice, total);
+            });
+        }
+    }
+
+    private void bindPieSliceNode(Node node, PieChart.Data slice, double total) {
+        double pct = total > 0 ? slice.getPieValue() / total * 100 : 0;
+        String tip = slice.getName() + "\n" + String.format("%.1f%%", pct) +
+                     "  " + (int) slice.getPieValue() + " đơn";
+        Tooltip.install(node, createTooltip(tip));
+        node.setOnMouseEntered(e -> node.setStyle(
+            "-fx-opacity: 0.82; -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.4),10,0,0,0);"));
+        node.setOnMouseExited(e  -> node.setStyle("-fx-opacity: 1;"));
+        node.setOnMouseClicked(e -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Chi tiết");
+            alert.setHeaderText(null);
+            alert.setContentText(tip);
+            alert.showAndWait();
+        });
+    }
+
+    /** Highlight một table row (theo index trong VBox, 0 = header) */
+    private void highlightTableRow(VBox table, int rowIdx) {
+        for (int i = 0; i < table.getChildren().size(); i++) {
+            Node n = table.getChildren().get(i);
+            if (i == rowIdx) {
+                n.setStyle("-fx-background-color: #dbeafe; -fx-padding: 7 10;" +
+                           "-fx-border-color: #93c5fd; -fx-border-width: 0 0 1 0;");
+            }
+        }
+    }
+
+    /** Reset table highlight về màu gốc */
+    private void resetTableHighlight(VBox table) {
+        for (int i = 1; i < table.getChildren().size(); i++) { // skip header
+            Node n = table.getChildren().get(i);
+            String bg = (i % 2 == 1) ? "#f8fafc" : "white";
+            n.setStyle("-fx-background-color: " + bg + "; -fx-padding: 7 10;" +
+                       "-fx-border-color: #f1f5f9; -fx-border-width: 0 0 1 0;");
+        }
+    }
+
+    /** Tạo Tooltip với style đẹp */
+    private Tooltip createTooltip(String text) {
+        Tooltip tt = new Tooltip(text);
+        tt.setStyle("-fx-background-color: #1e293b; -fx-text-fill: white;" +
+                    "-fx-font-size: 12px; -fx-background-radius: 8; -fx-padding: 8 12;");
+        tt.setShowDelay(javafx.util.Duration.millis(100));
+        return tt;
     }
 
     // ── Helpers ──────────────────────────────────────────────────────
