@@ -13,9 +13,19 @@ public class SanPhamDAO {
         LoaiSanPhamDAO lspDao = new LoaiSanPhamDAO();
         List<LoaiSanPham> lsps = lspDao.getAll();
         if (lsps.size() >= 3) {
-            list.add(new SanPham("SP001", "Áo thun Polo Classic", 45000, 150, 30, 0, 0, "Dáng suông", TrangThaiSanPham.DaHoanThanh, lsps.get(0)));
-            list.add(new SanPham("SP002", "Quần Kaki Công Sở", 75000, 90, 18, 5, 1, "Dáng slimfit", TrangThaiSanPham.DangMay, lsps.get(1)));
-            list.add(new SanPham("SP003", "Đầm Linen Dạo Phố", 95000, 60, 12, 0, 0, "Dáng chữ A", TrangThaiSanPham.DaHoanThanh, lsps.get(2)));
+            // SP001: 4 màu, 160 bộ (= 40 lượt trải × 4 màu)
+            //   → bộ mỗi màu = 40, ri mỗi màu = 40/4 = 10, tổng ri DK = 10×4 = 40 ri, bộ lẻ = 0
+            SanPham sp1 = new SanPham("SP001", "Áo thun Polo Classic", 45000, 4, 160, "Dáng suông", TrangThaiSanPham.DaHoanThanh, lsps.get(0));
+            sp1.setTongSoBoThucTe(158); sp1.setTongSoRiThucTe(39); sp1.setSoBoLeThucTe(2); sp1.setSoRiLeThucTe(0);
+            list.add(sp1);
+            // SP002: 3 màu, 90 bộ (= 30 lượt trải × 3 màu)
+            //   → bộ mỗi màu = 30, ri mỗi màu = 30/4 = 7, tổng ri DK = 7×3 = 21 ri, bộ lẻ = 90 - 21×4 = 6
+            list.add(new SanPham("SP002", "Quần Kaki Công Sở", 75000, 3, 90, "Dáng slimfit", TrangThaiSanPham.DangMay, lsps.get(1)));
+            // SP003: 4 màu, 64 bộ (= 16 lượt trải × 4 màu)
+            //   → bộ mỗi màu = 16, ri mỗi màu = 16/4 = 4, tổng ri DK = 4×4 = 16 ri, bộ lẻ = 0
+            SanPham sp3 = new SanPham("SP003", "Đầm Linen Dạo Phố", 95000, 4, 64, "Dáng chữ A", TrangThaiSanPham.DaHoanThanh, lsps.get(2));
+            sp3.setTongSoBoThucTe(61); sp3.setTongSoRiThucTe(15); sp3.setSoBoLeThucTe(1); sp3.setSoRiLeThucTe(0);
+            list.add(sp3);
         }
     }
 

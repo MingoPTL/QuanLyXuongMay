@@ -278,6 +278,19 @@ public class MainFrame {
         scrollKhachHang  = wrapInScroll(khachHangPanel);
         scrollHoaDon     = wrapInScroll(hoaDonPanel);
 
+        khachHangPanel.setOnCreateOrderCallback(kh -> {
+            showPanel(sanPhamPanel, btnSanPham);
+            sanPhamPanel.selectCustomerAndOrderTab(kh);
+        });
+
+        sanPhamPanel.setOnStatusChangedToAssignCallback(sp -> {
+            showPanel(nhanSuPanel, btnNhanSu);
+            nhanSuPanel.selectProductAndAssignTab(sp);
+        });
+
+        // Khi NhanSuPanel l\u01b0u ph\u00e2n c\u00f4ng v\u1edbi th\u1ee3 \u1ee7i \u2192 t\u1ef1 refresh Quy tr\u00ecnh + S\u1ea3n Ph\u1ea9m
+        nhanSuPanel.setOnSanPhamUpdatedCallback(() -> sanPhamPanel.refreshForPhanCong());
+
         contentArea.getChildren().addAll(
             scrollTongQuan, scrollNguyenLieu, scrollSanPham,
             scrollNhanSu, scrollHeThong, scrollKhachHang, scrollHoaDon

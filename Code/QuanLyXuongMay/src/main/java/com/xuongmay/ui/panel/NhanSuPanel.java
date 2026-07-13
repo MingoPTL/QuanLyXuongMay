@@ -12,6 +12,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.Node;
 import javafx.scene.layout.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 public class NhanSuPanel extends VBox {
@@ -33,7 +34,13 @@ public class NhanSuPanel extends VBox {
     private TextField txtPcQty;
     private CheckBox chkAllQty;
     private PhanCongSanPham selectedPc;
+    private TabPane tabPane;
+    private Label lblRemainingInfo;
+    private Runnable onSanPhamUpdatedCallback;
 
+    public void setOnSanPhamUpdatedCallback(Runnable callback) {
+        this.onSanPhamUpdatedCallback = callback;
+    }
     public NhanSuPanel() {
         setSpacing(15);
         setPadding(new Insets(15));
@@ -42,7 +49,7 @@ public class NhanSuPanel extends VBox {
         Label lblTitle = new Label("Quản Lý Nhân Sự & Phân Công");
         lblTitle.getStyleClass().add("tab-title");
 
-        TabPane tabPane = new TabPane();
+        tabPane = new TabPane();
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         VBox.setVgrow(tabPane, Priority.ALWAYS);
 
@@ -251,7 +258,11 @@ public class NhanSuPanel extends VBox {
         VBox.setVgrow(tablePc, Priority.ALWAYS);
 
         TableColumn<PhanCongSanPham, String> colPcId = new TableColumn<>("Mã PC");
-        colPcId.setCellValueFactory(new PropertyValueFactory<>("maPhanCong"));
+        colPcId.setCellValueFactory(cellData -> {
+            String ma = cellData.getValue().getMaPhanCong();
+            if (ma != null && ma.startsWith("__UNASSIGNED__")) return new SimpleStringProperty("---");
+            return new SimpleStringProperty(ma != null ? ma : "");
+        });
         colPcId.setPrefWidth(90);
 
         TableColumn<PhanCongSanPham, String> colPcSp = new TableColumn<>("Sản Phẩm");
@@ -263,24 +274,38 @@ public class NhanSuPanel extends VBox {
         });
         colPcSp.setPrefWidth(180);
 
+        TableColumn<PhanCongSanPham, String> colPcSpStatus = new TableColumn<>("Khâu hiện tại");
+        colPcSpStatus.setCellValueFactory(cellData -> {
+            if (cellData.getValue().getSanPham() != null && cellData.getValue().getSanPham().getTrangThaiSanPham() != null) {
+                return new SimpleStringProperty(cellData.getValue().getSanPham().getTrangThaiSanPham().toString());
+            }
+            return new SimpleStringProperty("N/A");
+        });
+        colPcSpStatus.setPrefWidth(110);
+
         TableColumn<PhanCongSanPham, String> colPcNv = new TableColumn<>("Nhân Viên Nhận");
         colPcNv.setCellValueFactory(cellData -> {
-            if (cellData.getValue().getNhanVien() != null) {
-                return new SimpleStringProperty(cellData.getValue().getNhanVien().getTenNhanVien());
-            }
+            String ma = cellData.getValue().getMaPhanCong();
+            if (ma != null && ma.startsWith("__UNASSIGNED__")) return new SimpleStringProperty("(Chưa phân công)");
+            if (cellData.getValue().getNhanVien() != null) return new SimpleStringProperty(cellData.getValue().getNhanVien().getTenNhanVien());
             return new SimpleStringProperty("N/A");
         });
         colPcNv.setPrefWidth(180);
 
         TableColumn<PhanCongSanPham, String> colPcDate = new TableColumn<>("Ngày Phân Công");
-        colPcDate.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getNgayPhanCong().toString()));
+        colPcDate.setCellValueFactory(cellData -> {
+            String ma = cellData.getValue().getMaPhanCong();
+            if (ma != null && ma.startsWith("__UNASSIGNED__")) return new SimpleStringProperty("---");
+            java.time.LocalDate d = cellData.getValue().getNgayPhanCong();
+            return new SimpleStringProperty(d != null ? d.toString() : "---");
+        });
         colPcDate.setPrefWidth(120);
 
         TableColumn<PhanCongSanPham, String> colPcQty = new TableColumn<>("Số Lượng");
         colPcQty.setCellValueFactory(new PropertyValueFactory<>("soLuong"));
         colPcQty.setPrefWidth(100);
 
-        tablePc.getColumns().addAll(colPcId, colPcSp, colPcNv, colPcDate, colPcQty);
+        tablePc.getColumns().addAll(colPcId, colPcSp, colPcSpStatus, colPcNv, colPcDate, colPcQty);
         tableBox.getChildren().addAll(new Label("Danh sách phân công công việc"), tablePc);
 
         // Form (Right)
@@ -302,6 +327,30 @@ public class NhanSuPanel extends VBox {
 
         txtPcId = new TextField();
         comboPcSp = new ComboBox<>();
+        comboPcSp.setCellFactory(lv -> new ListCell<SanPham>() {
+            @Override
+            protected void updateItem(SanPham item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    int remaining = getRemainingQty(item, selectedPc != null ? selectedPc.getMaPhanCong() : null);
+                    setText(item.getTenSanPham() + " (Khâu: " + (item.getTrangThaiSanPham() != null ? item.getTrangThaiSanPham().toString() : "Chưa rõ") + " - Còn: " + remaining + "/" + item.getTongSoBoDuKien() + ")");
+                }
+            }
+        });
+        comboPcSp.setButtonCell(new ListCell<SanPham>() {
+            @Override
+            protected void updateItem(SanPham item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    int remaining = getRemainingQty(item, selectedPc != null ? selectedPc.getMaPhanCong() : null);
+                    setText(item.getTenSanPham() + " (Khâu: " + (item.getTrangThaiSanPham() != null ? item.getTrangThaiSanPham().toString() : "Chưa rõ") + " - Còn: " + remaining + "/" + item.getTongSoBoDuKien() + ")");
+                }
+            }
+        });
         comboPcNv = new ComboBox<>();
         pickerPcDate = new DatePicker(LocalDate.now());
 
@@ -325,6 +374,13 @@ public class NhanSuPanel extends VBox {
             }
         });
 
+        comboPcSp.valueProperty().addListener((obs, oldVal, newVal) -> {
+            updateRemainingLabel(newVal);
+        });
+
+        lblRemainingInfo = new Label();
+        lblRemainingInfo.setStyle("-fx-text-fill: #4338ca; -fx-font-weight: bold; -fx-font-size: 11px;");
+
         grid.add(new Label("Mã PC:"), 0, 0);
         grid.add(txtPcId, 1, 0);
         grid.add(new Label("Sản phẩm:"), 0, 1);
@@ -335,6 +391,8 @@ public class NhanSuPanel extends VBox {
         grid.add(pickerPcDate, 1, 3);
         grid.add(new Label("Số lượng:"), 0, 4);
         grid.add(qtyBox, 1, 4);
+        grid.add(new Label("Còn lại:"), 0, 5);
+        grid.add(lblRemainingInfo, 1, 5);
 
         HBox btnBox = new HBox(10);
         btnBox.setAlignment(Pos.CENTER_RIGHT);
@@ -353,22 +411,38 @@ public class NhanSuPanel extends VBox {
         // Events
         tablePc.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
-                selectedPc = newVal;
-                txtPcId.setText(newVal.getMaPhanCong());
-                txtPcId.setEditable(false);
-                comboPcSp.setValue(newVal.getSanPham());
-                comboPcNv.setValue(newVal.getNhanVien());
-                pickerPcDate.setValue(newVal.getNgayPhanCong());
-                
-                String qty = newVal.getSoLuong();
-                if (qty == null || qty.isEmpty() || "Tất cả".equals(qty)) {
-                    chkAllQty.setSelected(true);
-                    txtPcQty.setText("Tất cả");
-                    txtPcQty.setDisable(true);
-                } else {
+                String ma = newVal.getMaPhanCong();
+                if (ma != null && ma.startsWith("__UNASSIGNED__")) {
+                    // Hàng ảo "Chưa phân công" → chuẩn bị form tạo mới
+                    selectedPc = null;
+                    txtPcId.setText("PC" + (System.currentTimeMillis() % 100000));
+                    txtPcId.setEditable(true);
+                    comboPcSp.setValue(newVal.getSanPham());
+                    comboPcNv.setValue(null);
+                    pickerPcDate.setValue(java.time.LocalDate.now());
                     chkAllQty.setSelected(false);
-                    txtPcQty.setText(qty);
+                    txtPcQty.setText(newVal.getSoLuong());
                     txtPcQty.setDisable(false);
+                    updateRemainingLabel(newVal.getSanPham());
+                } else {
+                    // Hàng thật → chỉnh sửa bản ghi hiện tại
+                    selectedPc = newVal;
+                    txtPcId.setText(newVal.getMaPhanCong());
+                    txtPcId.setEditable(false);
+                    comboPcSp.setValue(newVal.getSanPham());
+                    comboPcNv.setValue(newVal.getNhanVien());
+                    pickerPcDate.setValue(newVal.getNgayPhanCong());
+                    String qty = newVal.getSoLuong();
+                    if (qty == null || qty.isEmpty() || "Tất cả".equals(qty)) {
+                        chkAllQty.setSelected(true);
+                        txtPcQty.setText("Tất cả");
+                        txtPcQty.setDisable(true);
+                    } else {
+                        chkAllQty.setSelected(false);
+                        txtPcQty.setText(qty);
+                        txtPcQty.setDisable(false);
+                    }
+                    updateRemainingLabel(newVal.getSanPham());
                 }
             }
         });
@@ -385,11 +459,27 @@ public class NhanSuPanel extends VBox {
                 return;
             }
 
-            if (!chkAllQty.isSelected()) {
+            // Tính remaining: nếu đang sửa một bản ghi (selectedPc != null) thì loại trừ bản ghi đó
+            int remaining = getRemainingQty(sp, selectedPc != null ? selectedPc.getMaPhanCong() : null);
+
+            if (chkAllQty.isSelected()) {
+                if (remaining <= 0) {
+                    showAlert(Alert.AlertType.WARNING, "Hết công suất",
+                        "Sản phẩm này đã được phân công hết " + sp.getTongSoBoDuKien() + " bộ!\n"
+                        + "Vui lòng chỉnh sửa hoặc xóa phân công hiện có trước.");
+                    return;
+                }
+            } else {
                 try {
                     int val = Integer.parseInt(qty);
                     if (val <= 0) {
                         showAlert(Alert.AlertType.WARNING, "Lỗi dữ liệu", "Số lượng phải là số nguyên dương lớn hơn 0!");
+                        return;
+                    }
+                    if (val > remaining) {
+                        showAlert(Alert.AlertType.WARNING, "Lỗi phân công vượt hạn mức",
+                            "Số lượng nhập (" + val + ") vượt quá số bộ còn lại chưa phân công (" + remaining + " bộ).\n"
+                            + "Tổng dự kiến: " + sp.getTongSoBoDuKien() + " bộ.");
                         return;
                     }
                 } catch (NumberFormatException ex) {
@@ -412,17 +502,36 @@ public class NhanSuPanel extends VBox {
                 selectedPc.setSoLuong(qty);
                 service.updatePhanCong(selectedPc);
             }
+
+            // Tự động cập nhật trạng thái sản phẩm dựa trên chuyên môn thợ được phân công
+            if (sp.getTrangThaiSanPham() != TrangThaiSanPham.DaHoanThanh) {
+                TrangThaiSanPham newSpStatus = null;
+                if (nv.getChuyenMon() == ChuyenMon.ThoUi) {
+                    newSpStatus = TrangThaiSanPham.DangUi; // Thợ ủi → Chuyển sang Đang ủi
+                } else if (nv.getChuyenMon() == ChuyenMon.ThoMay
+                        && sp.getTrangThaiSanPham() == TrangThaiSanPham.DangCat) {
+                    newSpStatus = TrangThaiSanPham.DangMay; // Thợ may (từ giai đoạn cắt) → Đang may
+                }
+                if (newSpStatus != null && sp.getTrangThaiSanPham() != newSpStatus) {
+                    sp.setTrangThaiSanPham(newSpStatus);
+                    spService.updateSanPham(sp);
+                    if (onSanPhamUpdatedCallback != null) {
+                        onSanPhamUpdatedCallback.run();
+                    }
+                }
+            }
+
             refreshAssignments();
             clearAssignForm();
         });
 
         btnDelete.setOnAction(e -> {
-            if (selectedPc != null) {
+            if (selectedPc != null && (selectedPc.getMaPhanCong() == null || !selectedPc.getMaPhanCong().startsWith("__UNASSIGNED__"))) {
                 service.deletePhanCong(selectedPc.getMaPhanCong());
                 refreshAssignments();
                 clearAssignForm();
             } else {
-                showAlert(Alert.AlertType.WARNING, "Lỗi thao tác", "Vui lòng chọn một phân công để xóa!");
+                showAlert(Alert.AlertType.WARNING, "Lỗi thao tác", "Vui lòng chọn một phân công thật (không phải hàng chưa phân công) để xóa!");
             }
         });
 
@@ -430,7 +539,20 @@ public class NhanSuPanel extends VBox {
 
         // Context Menu (chuột phải) cho bảng phân công
         tablePc.setRowFactory(tv -> {
-            TableRow<PhanCongSanPham> row = new TableRow<>();
+            TableRow<PhanCongSanPham> row = new TableRow<>() {
+                @Override
+                protected void updateItem(PhanCongSanPham item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setStyle("");
+                    } else if (item.getMaPhanCong() != null && item.getMaPhanCong().startsWith("__UNASSIGNED__")) {
+                        // Hàng chưa phân công: in nghiêng, màu xám nhạt
+                        setStyle("-fx-font-style: italic; -fx-text-fill: #9ca3af;");
+                    } else {
+                        setStyle("");
+                    }
+                }
+            };
             ContextMenu contextMenu = new ContextMenu();
 
             MenuItem editItem = new MenuItem("✏️  Chỉnh sửa");
@@ -441,16 +563,21 @@ public class NhanSuPanel extends VBox {
             MenuItem deleteItem = new MenuItem("🗑️  Xóa Phân Công");
             deleteItem.setOnAction(event -> {
                 PhanCongSanPham rowData = row.getItem();
-                if (rowData != null) {
+                if (rowData != null && (rowData.getMaPhanCong() == null || !rowData.getMaPhanCong().startsWith("__UNASSIGNED__"))) {
                     tablePc.getSelectionModel().select(rowData);
                     btnDelete.fire();
                 }
             });
 
+            MenuItem assignItem = new MenuItem("➕  Tạo phân công từ đây");
+            assignItem.setOnAction(event -> {
+                if (row.getItem() != null) tablePc.getSelectionModel().select(row.getItem());
+            });
+
             MenuItem copyIdItem = new MenuItem("📋  Sao chép mã phân công");
             copyIdItem.setOnAction(event -> {
                 PhanCongSanPham rowData = row.getItem();
-                if (rowData != null && rowData.getMaPhanCong() != null) {
+                if (rowData != null && rowData.getMaPhanCong() != null && !rowData.getMaPhanCong().startsWith("__UNASSIGNED__")) {
                     javafx.scene.input.Clipboard cb = javafx.scene.input.Clipboard.getSystemClipboard();
                     javafx.scene.input.ClipboardContent cc = new javafx.scene.input.ClipboardContent();
                     cc.putString(rowData.getMaPhanCong());
@@ -458,7 +585,15 @@ public class NhanSuPanel extends VBox {
                 }
             });
 
-            contextMenu.getItems().addAll(editItem, deleteItem, new SeparatorMenuItem(), copyIdItem);
+            // Hiển thị menu khác nhau tuỳ loại hàng
+            row.itemProperty().addListener((obs, oldItem, newItem) -> {
+                contextMenu.getItems().clear();
+                if (newItem != null && newItem.getMaPhanCong() != null && newItem.getMaPhanCong().startsWith("__UNASSIGNED__")) {
+                    contextMenu.getItems().addAll(assignItem);
+                } else {
+                    contextMenu.getItems().addAll(editItem, deleteItem, new SeparatorMenuItem(), copyIdItem);
+                }
+            });
 
             row.emptyProperty().addListener((obs, wasEmpty, isEmpty) ->
                 row.setContextMenu(isEmpty ? null : contextMenu)
@@ -477,8 +612,33 @@ public class NhanSuPanel extends VBox {
     }
 
     private void refreshAssignments() {
-        tablePc.setItems(FXCollections.observableArrayList(service.getAllPhanCong()));
-        comboPcSp.setItems(FXCollections.observableArrayList(spService.getAllSanPham()));
+        List<PhanCongSanPham> realList = service.getAllPhanCong();
+        List<SanPham> allProducts = spService.getAllSanPham();
+
+        // Danh sách hiển thị = phân công thật + hàng ảo "Chưa phân công" cho phần còn lại
+        List<PhanCongSanPham> displayList = new ArrayList<>(realList);
+        for (SanPham sp : allProducts) {
+            int remaining = getRemainingQty(sp, null);
+            if (remaining > 0) {
+                PhanCongSanPham unassigned = new PhanCongSanPham(
+                    "__UNASSIGNED__" + sp.getMaSanPham(), sp, null, null, String.valueOf(remaining));
+                displayList.add(unassigned);
+            }
+        }
+        tablePc.setItems(FXCollections.observableArrayList(displayList));
+        tablePc.refresh(); // Buộc JavaFX re-render lại tất cả các ô trong bảng
+
+        // Cập nhật combo sản phẩm (luôn hiện tất cả)
+        SanPham currentSp = comboPcSp.getValue();
+        comboPcSp.setItems(FXCollections.observableArrayList(allProducts));
+        if (currentSp != null) {
+            for (SanPham sp : allProducts) {
+                if (sp.getMaSanPham().equals(currentSp.getMaSanPham())) {
+                    comboPcSp.setValue(sp);
+                    break;
+                }
+            }
+        }
     }
 
     private void clearStaffForm() {
@@ -506,6 +666,9 @@ public class NhanSuPanel extends VBox {
             txtPcQty.setText("Tất cả");
             txtPcQty.setDisable(true);
         }
+        if (lblRemainingInfo != null) {
+            lblRemainingInfo.setText("");
+        }
         tablePc.getSelectionModel().clearSelection();
     }
 
@@ -515,5 +678,55 @@ public class NhanSuPanel extends VBox {
         alert.setHeaderText(null);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+
+    public void selectProductAndAssignTab(SanPham sp) {
+        clearAssignForm();
+        if (tabPane != null && tabPane.getTabs().size() > 1) {
+            tabPane.getSelectionModel().select(1); // Select 2nd tab (Phân Công)
+        }
+        if (comboPcSp != null) {
+            // Need to make sure sp is in combo list before selecting
+            refreshAssignments();
+            comboPcSp.setValue(sp);
+        }
+        if (txtPcId != null) {
+            txtPcId.setText("PC" + System.currentTimeMillis() % 1000000);
+        }
+    }
+
+    public int getRemainingQty(SanPham sp, String excludePcId) {
+        if (sp == null) return 0;
+        int total = sp.getTongSoBoDuKien();
+        int assigned = 0;
+        for (PhanCongSanPham pc : service.getAllPhanCong()) {
+            if (excludePcId != null && pc.getMaPhanCong().equals(excludePcId)) {
+                continue;
+            }
+            if (pc.getSanPham() != null && pc.getSanPham().getMaSanPham().equals(sp.getMaSanPham())) {
+                String qtyStr = pc.getSoLuong();
+                if ("Tất cả".equalsIgnoreCase(qtyStr)) {
+                    assigned = total;
+                    break;
+                } else {
+                    try {
+                        assigned += Integer.parseInt(qtyStr);
+                    } catch (NumberFormatException e) {
+                        // ignore
+                    }
+                }
+            }
+        }
+        return Math.max(0, total - assigned);
+    }
+
+    private void updateRemainingLabel(SanPham sp) {
+        if (sp == null) {
+            lblRemainingInfo.setText("");
+            return;
+        }
+        String pcId = selectedPc != null ? selectedPc.getMaPhanCong() : null;
+        int rem = getRemainingQty(sp, pcId);
+        lblRemainingInfo.setText("Tổng dự kiến: " + sp.getTongSoBoDuKien() + " bộ | Còn lại: " + rem + " bộ");
     }
 }

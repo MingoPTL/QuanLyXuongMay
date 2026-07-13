@@ -57,11 +57,11 @@ public class BanHangService {
             ctDao.add(ct);
             total += ct.getThanhTien();
 
-            // Decrement inventory stock
+            // Decrement inventory stock (affects expected total)
             if (ct.getSanPham() != null) {
                 SanPham sp = spDao.getById(ct.getSanPham().getMaSanPham());
                 if (sp != null) {
-                    sp.setTongSoBo(sp.getTongSoBo() - ct.getSoLuongRi());
+                    sp.setTongSoBoDuKien(sp.getTongSoBoDuKien() - ct.getSoLuongRi());
                     spDao.update(sp);
                 }
             }
@@ -85,7 +85,7 @@ public class BanHangService {
             if (ct.getSanPham() != null) {
                 SanPham sp = spDao.getById(ct.getSanPham().getMaSanPham());
                 if (sp != null) {
-                    sp.setTongSoBo(sp.getTongSoBo() + ct.getSoLuongRi());
+                    sp.setTongSoBoDuKien(sp.getTongSoBoDuKien() + ct.getSoLuongRi());
                     spDao.update(sp);
                 }
             }

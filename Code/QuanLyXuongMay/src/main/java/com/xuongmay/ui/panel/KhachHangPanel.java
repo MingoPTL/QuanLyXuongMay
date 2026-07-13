@@ -15,6 +15,11 @@ public class KhachHangPanel extends VBox {
     private TableView<KhachHang> tableKh;
     private TextField txtKhId, txtKhName, txtKhPhone, txtKhAddress, txtKhTaxCode, txtKhNote;
     private KhachHang selectedKh;
+    private java.util.function.Consumer<KhachHang> onCreateOrderCallback;
+
+    public void setOnCreateOrderCallback(java.util.function.Consumer<KhachHang> callback) {
+        this.onCreateOrderCallback = callback;
+    }
 
     public KhachHangPanel() {
         setSpacing(15);
@@ -190,6 +195,14 @@ public class KhachHangPanel extends VBox {
                 }
             });
             
+            MenuItem createOrderItem = new MenuItem("Tạo đơn hàng");
+            createOrderItem.setOnAction(event -> {
+                KhachHang rowData = row.getItem();
+                if (rowData != null && onCreateOrderCallback != null) {
+                    onCreateOrderCallback.accept(rowData);
+                }
+            });
+
             MenuItem copyPhoneItem = new MenuItem("Sao chép số điện thoại");
             copyPhoneItem.setOnAction(event -> {
                 KhachHang rowData = row.getItem();
@@ -201,7 +214,7 @@ public class KhachHangPanel extends VBox {
                 }
             });
 
-            contextMenu.getItems().addAll(editItem, deleteItem, new SeparatorMenuItem(), copyPhoneItem);
+            contextMenu.getItems().addAll(createOrderItem, new SeparatorMenuItem(), editItem, deleteItem, new SeparatorMenuItem(), copyPhoneItem);
 
             row.emptyProperty().addListener((obs, wasEmpty, isEmpty) -> {
                 if (isEmpty) {
