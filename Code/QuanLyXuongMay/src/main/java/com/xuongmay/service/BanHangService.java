@@ -98,6 +98,11 @@ public class BanHangService {
         hdDao.delete(maHD);
     }
 
+    // Sales Order operations (additional)
+    public void updateDonHang(DonHang dh) {
+        dhDao.update(dh);
+    }
+
     // Invoice operations
     public List<HoaDon> getAllHoaDon() {
         return hdDao.getAll();

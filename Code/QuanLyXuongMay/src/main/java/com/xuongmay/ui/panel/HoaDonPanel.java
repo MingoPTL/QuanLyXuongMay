@@ -9,6 +9,9 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.print.PrinterJob;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -23,6 +26,7 @@ public class HoaDonPanel extends VBox {
     private Label lblOrderInfo;
     private HoaDon selectedHd;
     private TextField txtCustName, txtCustPhone, txtCustTaxCode, txtCustAddress, txtOrderNote;
+    private Button btnDelete, btnPay;
 
     public HoaDonPanel() {
         setSpacing(15);
@@ -143,10 +147,21 @@ public class HoaDonPanel extends VBox {
         btnBox.setAlignment(Pos.CENTER_RIGHT);
         Button btnSave = new Button("Cập Nhật HĐ");
         btnSave.getStyleClass().addAll("btn", "btn-success");
+
+        btnDelete = new Button("Xóa HĐ");
+        btnDelete.getStyleClass().addAll("btn", "btn-danger");
+        btnDelete.setStyle("-fx-background-color: #ef4444; -fx-text-fill: white;");
+
+        btnPay = new Button();
+        btnPay.getStyleClass().addAll("btn", "btn-warning");
+        btnPay.setStyle("-fx-background-color: #f59e0b; -fx-text-fill: white; -fx-font-weight: bold;");
+        btnPay.setVisible(false);
+        btnPay.setManaged(false);
+
         Button btnPrint = new Button("In Hóa Đơn");
         btnPrint.getStyleClass().addAll("btn", "btn-primary");
 
-        btnBox.getChildren().addAll(btnSave, btnPrint);
+        btnBox.getChildren().addAll(btnSave, btnDelete, btnPay, btnPrint);
         formBox.getChildren().addAll(lblFormTitle, grid, lblOrderInfo, btnBox);
 
         // Details products inside order table
@@ -213,6 +228,28 @@ public class HoaDonPanel extends VBox {
                     txtOrderNote.clear();
                     tableCtdh.setItems(FXCollections.emptyObservableList());
                 }
+
+                // Check payment button visibility and label
+                if (newVal.getTrangThaiHoaDon() == TrangThaiHoaDon.ChuaThanhToan) {
+                    if (newVal.getPhuongThucThanhToan() == PhuongThucThanhToan.TienMat) {
+                        btnPay.setText("Xác Nhận Thanh Toán");
+                        btnPay.setVisible(true);
+                        btnPay.setManaged(true);
+                    } else if (newVal.getPhuongThucThanhToan() == PhuongThucThanhToan.ChuyenKhoan) {
+                        btnPay.setText("Thanh Toán QR");
+                        btnPay.setVisible(true);
+                        btnPay.setManaged(true);
+                    } else {
+                        btnPay.setVisible(false);
+                        btnPay.setManaged(false);
+                    }
+                } else {
+                    btnPay.setVisible(false);
+                    btnPay.setManaged(false);
+                }
+            } else {
+                btnPay.setVisible(false);
+                btnPay.setManaged(false);
             }
         });
 
@@ -244,6 +281,61 @@ public class HoaDonPanel extends VBox {
 
             refreshData();
             showAlert(Alert.AlertType.INFORMATION, "Thành công", "Đã cập nhật mã hóa đơn!");
+        });
+
+        btnDelete.setOnAction(e -> {
+            if (selectedHd == null) {
+                showAlert(Alert.AlertType.WARNING, "Lỗi thao tác", "Vui lòng chọn hóa đơn để xóa!");
+                return;
+            }
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.setTitle("Xác nhận xóa");
+            confirm.setHeaderText(null);
+            confirm.setContentText("Bạn có chắc chắn muốn xóa hóa đơn " + selectedHd.getMaHoaDon() + "?");
+            if (confirm.showAndWait().orElse(null) == ButtonType.OK) {
+                service.deleteHoaDon(selectedHd.getMaHoaDon());
+                selectedHd = null;
+                txtHdId.clear();
+                txtHdAmount.clear();
+                txtCustName.clear();
+                txtCustPhone.clear();
+                txtCustTaxCode.clear();
+                txtCustAddress.clear();
+                txtOrderNote.clear();
+                tableCtdh.setItems(FXCollections.emptyObservableList());
+                btnPay.setVisible(false);
+                btnPay.setManaged(false);
+                refreshData();
+                showAlert(Alert.AlertType.INFORMATION, "Thành công", "Đã xóa hóa đơn!");
+            }
+        });
+
+        btnPay.setOnAction(e -> {
+            if (selectedHd == null) return;
+            if (selectedHd.getPhuongThucThanhToan() == PhuongThucThanhToan.TienMat) {
+                Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+                confirm.setTitle("Xác nhận thanh toán");
+                confirm.setHeaderText(null);
+                confirm.setContentText("Xác nhận khách hàng đã thanh toán tiền mặt cho hóa đơn " + selectedHd.getMaHoaDon() + "?");
+                if (confirm.showAndWait().orElse(null) == ButtonType.OK) {
+                    selectedHd.setTrangThaiHoaDon(TrangThaiHoaDon.DaThanhToan);
+                    service.updateHoaDon(selectedHd);
+                    
+                    // Đồng bộ trạng thái thanh toán của Đơn Hàng tương ứng
+                    DonHang dh = selectedHd.getDonHang();
+                    if (dh != null) {
+                        service.updateDonHang(dh);
+                    }
+                    
+                    btnPay.setVisible(false);
+                    btnPay.setManaged(false);
+                    refreshData();
+                    tableHd.getSelectionModel().clearSelection();
+                    showAlert(Alert.AlertType.INFORMATION, "Thành công", "Đã xác nhận thanh toán tiền mặt!");
+                }
+            } else if (selectedHd.getPhuongThucThanhToan() == PhuongThucThanhToan.ChuyenKhoan) {
+                showQrPaymentDialog(selectedHd);
+            }
         });
 
         btnPrint.setOnAction(e -> {
@@ -300,6 +392,112 @@ public class HoaDonPanel extends VBox {
         });
 
         refreshData();
+    }
+
+    private void showQrPaymentDialog(HoaDon hd) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Thanh Toán Qua Mã QR");
+        dialog.setHeaderText("Quét mã QR dưới đây để thanh toán chuyển khoản");
+
+        ButtonType btnCloseType = new ButtonType("Đóng", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().add(btnCloseType);
+
+        VBox content = new VBox(15);
+        content.setPadding(new Insets(15));
+        content.setAlignment(Pos.CENTER);
+        content.setPrefWidth(420);
+
+        Label lblBankInfo = new Label("Ngân hàng: MB Bank (Ngân hàng Quân Đội)\nChủ TK: DINH VIET QUANG MINH\nSố TK: 0898478626");
+        lblBankInfo.setStyle("-fx-font-weight: bold; -fx-text-fill: #1e293b; -fx-alignment: center; -fx-text-alignment: center;");
+
+        String amountStr = String.format("%.0f", hd.getTongTienHoaDon());
+        Label lblAmount = new Label("Số tiền: " + String.format("%,.0f đ", hd.getTongTienHoaDon()));
+        lblAmount.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #ef4444;");
+
+        String addInfo = "Thanh toan HD " + hd.getMaHoaDon();
+        Label lblInfo = new Label("Nội dung: " + addInfo);
+        lblInfo.setStyle("-fx-font-style: italic; -fx-text-fill: #64748b;");
+
+        // QR Code ImageView
+        ImageView qrImageView = new ImageView();
+        qrImageView.setFitWidth(250);
+        qrImageView.setFitHeight(250);
+        qrImageView.setPreserveRatio(true);
+
+        String addInfoEncoded = addInfo.replace(" ", "%20");
+        String qrUrl = "https://img.vietqr.io/image/MB-0898478626-print.png?amount=" 
+                     + amountStr 
+                     + "&addInfo=" + addInfoEncoded 
+                     + "&accountName=DINH%20VIET%20QUANG%20MINH";
+        
+        try {
+            Image qrImage = new Image(qrUrl, true);
+            qrImageView.setImage(qrImage);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        // Horizontal box for Actions inside Dialog
+        HBox dialogActions = new HBox(10);
+        dialogActions.setAlignment(Pos.CENTER);
+
+        Button btnConfirmPaid = new Button("Xác Nhận Đã Thanh Toán");
+        btnConfirmPaid.getStyleClass().addAll("btn", "btn-success");
+        btnConfirmPaid.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold;");
+
+        Button btnPrintQr = new Button("In PDF (Mã QR)");
+        btnPrintQr.getStyleClass().addAll("btn", "btn-primary");
+        btnPrintQr.setStyle("-fx-background-color: #3b82f6; -fx-text-fill: white;");
+
+        dialogActions.getChildren().addAll(btnConfirmPaid, btnPrintQr);
+
+        content.getChildren().addAll(lblBankInfo, lblAmount, lblInfo, qrImageView, dialogActions);
+        dialog.getDialogPane().setContent(content);
+
+        // Action Handlers
+        btnConfirmPaid.setOnAction(e -> {
+            hd.setTrangThaiHoaDon(TrangThaiHoaDon.DaThanhToan);
+            service.updateHoaDon(hd);
+            
+            // Đồng bộ trạng thái thanh toán của Đơn Hàng tương ứng
+            DonHang dh = hd.getDonHang();
+            if (dh != null) {
+                service.updateDonHang(dh);
+            }
+            
+            btnPay.setVisible(false);
+            btnPay.setManaged(false);
+            refreshData();
+            tableHd.getSelectionModel().clearSelection();
+            dialog.close();
+            showAlert(Alert.AlertType.INFORMATION, "Thành công", "Đã xác nhận thanh toán chuyển khoản thành công!");
+        });
+
+        btnPrintQr.setOnAction(e -> {
+            dialogActions.setVisible(false);
+            dialogActions.setManaged(false);
+
+            PrinterJob job = PrinterJob.createPrinterJob();
+            if (job != null) {
+                boolean proceed = job.showPrintDialog(dialog.getOwner());
+                if (proceed) {
+                    boolean success = job.printPage(content);
+                    if (success) {
+                        job.endJob();
+                        showAlert(Alert.AlertType.INFORMATION, "In thành công", "Đã in/xuất PDF mã QR thanh toán!");
+                    } else {
+                        showAlert(Alert.AlertType.ERROR, "Lỗi in", "Có lỗi xảy ra khi in!");
+                    }
+                }
+            } else {
+                showAlert(Alert.AlertType.WARNING, "Không tìm thấy máy in", "Không tìm thấy máy in nào trên hệ thống!");
+            }
+
+            dialogActions.setVisible(true);
+            dialogActions.setManaged(true);
+        });
+
+        dialog.showAndWait();
     }
 
     public void refreshData() {
