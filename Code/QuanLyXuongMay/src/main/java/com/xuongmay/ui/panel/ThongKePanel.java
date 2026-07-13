@@ -295,7 +295,7 @@ public class ThongKePanel extends VBox {
         // KPI
         double dt = service.getDoanhThu(from, to);
         long soDon = service.getSoDonHang(from, to);
-        long riXuat = service.getTongRiXuatXuong();
+        long riXuat = service.getTongRiXuatXuong(from, to);
         double tiLe = service.getTiLeThanhToan(from, to);
 
         lblDoanhThu.setText(formatMoney(dt));
@@ -339,7 +339,7 @@ public class ThongKePanel extends VBox {
         barCongSuat.getData().addAll(seriesDK, seriesTT);
 
         // PieChart
-        Map<String, Long> phan = service.getPhanLoaiDonHang();
+        Map<String, Long> phan = service.getPhanLoaiDonHang(from, to);
         pieChart.getData().clear();
         phan.forEach((k, v) -> {
             if (v > 0) pieChart.getData().add(new PieChart.Data(k + " (" + v + ")", v));
@@ -357,7 +357,7 @@ public class ThongKePanel extends VBox {
         if (topSP.isEmpty()) tableTopSP.getChildren().add(emptyRow("Chưa có dữ liệu"));
 
         // Table Top KH
-        List<KhachHangStat> topKH = service.getTopKhachHang(5);
+        List<KhachHangStat> topKH = service.getTopKhachHang(from, to, 5);
         tableTopKH.getChildren().clear();
         tableTopKH.getChildren().add(tableHeader(new String[]{"STT", "Khách hàng", "Số đơn", "Tổng chi"}));
         for (int i = 0; i < topKH.size(); i++) {

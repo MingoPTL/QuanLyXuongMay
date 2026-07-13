@@ -71,10 +71,16 @@ public class ThongKeService {
                 .count();
     }
 
-    /** Tổng số ri sản phẩm xuất xưởng (thực tế) */
-    public long getTongRiXuatXuong() {
-        return spDao.getAll().stream()
-                .mapToLong(SanPham::getTongSoRiThucTe)
+    /** Tổng số ri sản phẩm xuất xưởng (thực tế từ các đơn hàng trong kỳ) */
+    public long getTongRiXuatXuong(LocalDate from, LocalDate to) {
+        Set<String> dhIds = dhDao.getAll().stream()
+                .filter(dh -> !dh.getNgayDat().isBefore(from) && !dh.getNgayDat().isAfter(to))
+                .map(DonHang::getMaDonHang)
+                .collect(Collectors.toSet());
+
+        return ctDao.getAll().stream()
+                .filter(ct -> ct.getDonHang() != null && dhIds.contains(ct.getDonHang().getMaDonHang()))
+                .mapToLong(ChiTietDonHang::getSoLuongRi)
                 .sum();
     }
 
@@ -159,23 +165,26 @@ public class ThongKeService {
     }
 
     /**
-     * Phân loại đơn hàng theo trạng thái (tất cả thời gian).
+     * Phân loại đơn hàng theo trạng thái trong kỳ.
      */
-    public Map<String, Long> getPhanLoaiDonHang() {
+    public Map<String, Long> getPhanLoaiDonHang(LocalDate from, LocalDate to) {
         Map<String, Long> map = new LinkedHashMap<>();
-        List<DonHang> all = dhDao.getAll();
+        List<DonHang> all = dhDao.getAll().stream()
+                .filter(dh -> !dh.getNgayDat().isBefore(from) && !dh.getNgayDat().isAfter(to))
+                .collect(Collectors.toList());
         map.put("Chưa giao", all.stream().filter(d -> d.getTrangThaiDonHang() == TrangThaiDonHang.ChuaGiao).count());
         map.put("Đã giao",   all.stream().filter(d -> d.getTrangThaiDonHang() == TrangThaiDonHang.DaGiao).count());
         return map;
     }
 
     /**
-     * Top N khách hàng chi tiêu nhiều nhất (tất cả thời gian).
+     * Top N khách hàng chi tiêu nhiều nhất trong kỳ.
      */
-    public List<KhachHangStat> getTopKhachHang(int limit) {
+    public List<KhachHangStat> getTopKhachHang(LocalDate from, LocalDate to, int limit) {
         Map<String, double[]> grouped = new LinkedHashMap<>(); // key=tenKH, val=[soDon, tongTien]
         dhDao.getAll().stream()
                 .filter(dh -> dh.getKhachHang() != null)
+                .filter(dh -> !dh.getNgayDat().isBefore(from) && !dh.getNgayDat().isAfter(to))
                 .forEach(dh -> {
                     String ten = dh.getKhachHang().getTenKhachHang();
                     grouped.merge(ten, new double[]{1, dh.getTongTien()}, (old, nw) -> {
