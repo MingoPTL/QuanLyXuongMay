@@ -347,52 +347,30 @@ public class HoaDonPanel extends VBox {
                 showAlert(Alert.AlertType.WARNING, "Lỗi thao tác", "Vui lòng chọn hóa đơn để in!");
                 return;
             }
-            StringBuilder receipt = new StringBuilder();
-            receipt.append("=========================================\n");
-            receipt.append("           XƯỞNG MAY ANTIGRAVITY         \n");
-            receipt.append("             HÓA ĐƠN BÁN HÀNG            \n");
-            receipt.append("=========================================\n");
-            receipt.append("Mã HĐ: ").append(selectedHd.getMaHoaDon()).append("\n");
-            receipt.append("Ngày lập: ").append(selectedHd.getNgayLap()).append("\n");
-            DonHang dh = selectedHd.getDonHang();
-            if (dh != null && dh.getKhachHang() != null) {
-                receipt.append("Khách hàng: ").append(dh.getKhachHang().getTenKhachHang()).append("\n");
-                receipt.append("SĐT: ").append(dh.getKhachHang().getSdt()).append("\n");
-                receipt.append("MST: ").append(dh.getKhachHang().getMaSoThue() != null ? dh.getKhachHang().getMaSoThue() : "").append("\n");
-                receipt.append("Địa chỉ: ").append(dh.getKhachHang().getDiaChiNha() != null ? dh.getKhachHang().getDiaChiNha() : "").append("\n");
+            
+            javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+            fileChooser.setTitle("Lưu Hóa Đơn PDF");
+            fileChooser.setInitialFileName("HoaDon_" + selectedHd.getMaHoaDon() + ".pdf");
+            fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("PDF Files (*.pdf)", "*.pdf"));
+            
+            java.io.File file = fileChooser.showSaveDialog(getScene().getWindow());
+            if (file != null) {
+                try {
+                    List<ChiTietDonHang> detailsList;
+                    if (selectedHd.getDonHang() != null) {
+                        detailsList = service.getChiTietByDonHangId(selectedHd.getDonHang().getMaDonHang());
+                    } else {
+                        detailsList = new java.util.ArrayList<>();
+                    }
+                    
+                    com.xuongmay.util.InvoicePdfExporter.exportToPdf(selectedHd, detailsList, file);
+                    showAlert(Alert.AlertType.INFORMATION, "Xuất PDF thành công", "Hóa đơn đã được lưu thành công!");
+                    com.xuongmay.util.InvoicePdfExporter.openPdf(file);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    showAlert(Alert.AlertType.ERROR, "Lỗi xuất PDF", "Có lỗi xảy ra khi xuất hóa đơn PDF: " + ex.getMessage());
+                }
             }
-            if (dh != null && dh.getGhiChu() != null && !dh.getGhiChu().isEmpty()) {
-                receipt.append("Ghi chú đơn: ").append(dh.getGhiChu()).append("\n");
-            }
-            receipt.append("-----------------------------------------\n");
-            receipt.append(String.format("%-18s %-6s %-8s %-10s\n", "Sản phẩm", "SL Ri", "Đơn giá", "Thành tiền"));
-            receipt.append("-----------------------------------------\n");
-            List<ChiTietDonHang> items = tableCtdh.getItems();
-            for (ChiTietDonHang item : items) {
-                receipt.append(String.format("%-18.18s %-6d %,.0f %,.0f đ\n",
-                        item.getSanPham().getTenSanPham(),
-                        item.getSoLuongRi(),
-                        item.getDonGiaRi(),
-                        item.getThanhTien()));
-            }
-            receipt.append("-----------------------------------------\n");
-            receipt.append(String.format("Tổng thanh toán: %,.0f đ\n", selectedHd.getTongTienHoaDon()));
-            receipt.append("P.Thức T.Toán: ").append(selectedHd.getPhuongThucThanhToan()).append("\n");
-            receipt.append("Trạng thái: ").append(selectedHd.getTrangThaiHoaDon()).append("\n");
-            receipt.append("=========================================\n");
-            receipt.append("          CẢM ƠN QUÝ KHÁCH!              \n");
-
-            // Display in dialog
-            TextArea area = new TextArea(receipt.toString());
-            area.setFont(javafx.scene.text.Font.font("Courier New", 12));
-            area.setEditable(false);
-            area.setPrefSize(450, 520);
-
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("In Hóa Đơn");
-            alert.setHeaderText("Hóa Đơn Xem Trước");
-            alert.getDialogPane().setContent(area);
-            alert.showAndWait();
         });
 
         refreshData();
