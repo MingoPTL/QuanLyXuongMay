@@ -348,27 +348,32 @@ public class HoaDonPanel extends VBox {
                 return;
             }
             
+            // Capture reference trước khi mở FileChooser vì dialog có thể làm mất selection
+            final HoaDon hdToExport = selectedHd;
+            
             javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
             fileChooser.setTitle("Lưu Hóa Đơn PDF");
-            fileChooser.setInitialFileName("HoaDon_" + selectedHd.getMaHoaDon() + ".pdf");
+            fileChooser.setInitialFileName("HoaDon_" + hdToExport.getMaHoaDon() + ".pdf");
             fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("PDF Files (*.pdf)", "*.pdf"));
             
             java.io.File file = fileChooser.showSaveDialog(getScene().getWindow());
             if (file != null) {
                 try {
                     List<ChiTietDonHang> detailsList;
-                    if (selectedHd.getDonHang() != null) {
-                        detailsList = service.getChiTietByDonHangId(selectedHd.getDonHang().getMaDonHang());
+                    if (hdToExport.getDonHang() != null) {
+                        detailsList = service.getChiTietByDonHangId(hdToExport.getDonHang().getMaDonHang());
                     } else {
                         detailsList = new java.util.ArrayList<>();
                     }
                     
-                    com.xuongmay.util.InvoicePdfExporter.exportToPdf(selectedHd, detailsList, file);
-                    showAlert(Alert.AlertType.INFORMATION, "Xuất PDF thành công", "Hóa đơn đã được lưu thành công!");
+                    com.xuongmay.util.InvoicePdfExporter.exportToPdf(hdToExport, detailsList, file);
+                    showAlert(Alert.AlertType.INFORMATION, "Xuất PDF thành công", 
+                        "Hóa đơn đã được lưu tại:\n" + file.getAbsolutePath());
                     com.xuongmay.util.InvoicePdfExporter.openPdf(file);
                 } catch (Exception ex) {
                     ex.printStackTrace();
-                    showAlert(Alert.AlertType.ERROR, "Lỗi xuất PDF", "Có lỗi xảy ra khi xuất hóa đơn PDF: " + ex.getMessage());
+                    showAlert(Alert.AlertType.ERROR, "Lỗi xuất PDF", 
+                        "Lỗi khi xuất hóa đơn PDF:\n" + ex.getClass().getSimpleName() + ": " + ex.getMessage());
                 }
             }
         });

@@ -28,6 +28,7 @@ public class MainFrame {
     private HeThongPanel heThongPanel;
     private KhachHangPanel khachHangPanel;
     private HoaDonPanel hoaDonPanel;
+    private ThongKePanel thongKePanel;
 
     // ScrollPane wrappers
     private ScrollPane scrollTongQuan;
@@ -37,6 +38,7 @@ public class MainFrame {
     private ScrollPane scrollHeThong;
     private ScrollPane scrollKhachHang;
     private ScrollPane scrollHoaDon;
+    private ScrollPane scrollThongKe;
 
     // Sidebar buttons
     private Button btnTongQuan;
@@ -46,6 +48,7 @@ public class MainFrame {
     private Button btnHeThong;
     private Button btnKhachHang;
     private Button btnHoaDon;
+    private Button btnThongKe;
     private Button btnLogout;
     private boolean isSidebarCollapsed = false;
     private final String userName;
@@ -111,6 +114,9 @@ public class MainFrame {
         btnHoaDon = new Button("🧾  Hóa đơn");
         btnHoaDon.getStyleClass().add("sidebar-button");
 
+        btnThongKe = new Button("📈  Thống kê");
+        btnThongKe.getStyleClass().add("sidebar-button");
+
         btnHeThong = new Button("⚙️  Cài đặt");
         btnHeThong.getStyleClass().add("sidebar-button");
 
@@ -134,8 +140,8 @@ public class MainFrame {
         });
 
         sidebar.getChildren().addAll(
-            brandContainer, lblSection, 
-            btnTongQuan, btnSanPham, btnNguyenLieu, btnNhanSu, btnKhachHang, btnHoaDon, btnHeThong,
+            brandContainer, lblSection,
+            btnTongQuan, btnSanPham, btnNguyenLieu, btnNhanSu, btnKhachHang, btnHoaDon, btnThongKe, btnHeThong,
             spacer, profileBox, btnLogout
         );
         root.setLeft(sidebar);
@@ -228,6 +234,10 @@ public class MainFrame {
             hoaDonPanel.refreshData();
             showPanel(hoaDonPanel, btnHoaDon);
         });
+        btnThongKe.setOnAction(e -> {
+            thongKePanel.refreshData();
+            showPanel(thongKePanel, btnThongKe);
+        });
 
         // Default panel to show
         showPanel(tongQuanPanel, btnTongQuan);
@@ -262,13 +272,14 @@ public class MainFrame {
     }
 
     private void initPanels() {
-        tongQuanPanel = new TongQuanPanel();
+        tongQuanPanel  = new TongQuanPanel();
         nguyenLieuPanel = new NguyenLieuPanel();
-        sanPhamPanel = new SanPhamPanel();
-        nhanSuPanel = new NhanSuPanel();
-        heThongPanel = new HeThongPanel();
+        sanPhamPanel   = new SanPhamPanel();
+        nhanSuPanel    = new NhanSuPanel();
+        heThongPanel   = new HeThongPanel();
         khachHangPanel = new KhachHangPanel();
-        hoaDonPanel = new HoaDonPanel();
+        hoaDonPanel    = new HoaDonPanel();
+        thongKePanel   = new ThongKePanel();
 
         scrollTongQuan   = wrapInScroll(tongQuanPanel);
         scrollNguyenLieu = wrapInScroll(nguyenLieuPanel);
@@ -277,6 +288,7 @@ public class MainFrame {
         scrollHeThong    = wrapInScroll(heThongPanel);
         scrollKhachHang  = wrapInScroll(khachHangPanel);
         scrollHoaDon     = wrapInScroll(hoaDonPanel);
+        scrollThongKe    = wrapInScroll(thongKePanel);
 
         khachHangPanel.setOnCreateOrderCallback(kh -> {
             showPanel(sanPhamPanel, btnSanPham);
@@ -288,12 +300,11 @@ public class MainFrame {
             nhanSuPanel.selectProductAndAssignTab(sp);
         });
 
-        // Khi NhanSuPanel l\u01b0u ph\u00e2n c\u00f4ng v\u1edbi th\u1ee3 \u1ee7i \u2192 t\u1ef1 refresh Quy tr\u00ecnh + S\u1ea3n Ph\u1ea9m
         nhanSuPanel.setOnSanPhamUpdatedCallback(() -> sanPhamPanel.refreshForPhanCong());
 
         contentArea.getChildren().addAll(
             scrollTongQuan, scrollNguyenLieu, scrollSanPham,
-            scrollNhanSu, scrollHeThong, scrollKhachHang, scrollHoaDon
+            scrollNhanSu, scrollHeThong, scrollKhachHang, scrollHoaDon, scrollThongKe
         );
     }
 
@@ -306,15 +317,17 @@ public class MainFrame {
         scrollHeThong.setVisible(false);
         scrollKhachHang.setVisible(false);
         scrollHoaDon.setVisible(false);
+        scrollThongKe.setVisible(false);
 
         // Show scroll pane of the matching panel
-        if (panel == tongQuanPanel)       scrollTongQuan.setVisible(true);
+        if      (panel == tongQuanPanel)  scrollTongQuan.setVisible(true);
         else if (panel == nguyenLieuPanel) scrollNguyenLieu.setVisible(true);
         else if (panel == sanPhamPanel)   scrollSanPham.setVisible(true);
         else if (panel == nhanSuPanel)    scrollNhanSu.setVisible(true);
         else if (panel == heThongPanel)   scrollHeThong.setVisible(true);
         else if (panel == khachHangPanel) scrollKhachHang.setVisible(true);
         else if (panel == hoaDonPanel)    scrollHoaDon.setVisible(true);
+        else if (panel == thongKePanel)   scrollThongKe.setVisible(true);
 
         // Reset sidebar button styles
         btnTongQuan.getStyleClass().remove("sidebar-button-active");
@@ -324,6 +337,7 @@ public class MainFrame {
         btnHeThong.getStyleClass().remove("sidebar-button-active");
         btnKhachHang.getStyleClass().remove("sidebar-button-active");
         btnHoaDon.getStyleClass().remove("sidebar-button-active");
+        btnThongKe.getStyleClass().remove("sidebar-button-active");
 
         // Set active button style
         activeButton.getStyleClass().add("sidebar-button-active");
@@ -347,15 +361,17 @@ public class MainFrame {
             btnNhanSu.setText("👥");
             btnKhachHang.setText("🤝");
             btnHoaDon.setText("🧾");
+            btnThongKe.setText("📈");
             btnHeThong.setText("⚙️");
             btnLogout.setText("🚪");
-            
+
             btnTongQuan.setAlignment(Pos.CENTER);
             btnSanPham.setAlignment(Pos.CENTER);
             btnNguyenLieu.setAlignment(Pos.CENTER);
             btnNhanSu.setAlignment(Pos.CENTER);
             btnKhachHang.setAlignment(Pos.CENTER);
             btnHoaDon.setAlignment(Pos.CENTER);
+            btnThongKe.setAlignment(Pos.CENTER);
             btnHeThong.setAlignment(Pos.CENTER);
             btnLogout.setAlignment(Pos.CENTER);
             
@@ -394,15 +410,17 @@ public class MainFrame {
                 btnNhanSu.setText("👥  Nhân sự");
                 btnKhachHang.setText("🤝  Khách hàng");
                 btnHoaDon.setText("🧾  Hóa đơn");
+                btnThongKe.setText("📈  Thống kê");
                 btnHeThong.setText("⚙️  Cài đặt");
                 btnLogout.setText("🚪  Đăng xuất");
-                
+
                 btnTongQuan.setAlignment(Pos.CENTER_LEFT);
                 btnSanPham.setAlignment(Pos.CENTER_LEFT);
                 btnNguyenLieu.setAlignment(Pos.CENTER_LEFT);
                 btnNhanSu.setAlignment(Pos.CENTER_LEFT);
                 btnKhachHang.setAlignment(Pos.CENTER_LEFT);
                 btnHoaDon.setAlignment(Pos.CENTER_LEFT);
+                btnThongKe.setAlignment(Pos.CENTER_LEFT);
                 btnHeThong.setAlignment(Pos.CENTER_LEFT);
                 btnLogout.setAlignment(Pos.CENTER_LEFT);
             });
