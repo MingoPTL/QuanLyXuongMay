@@ -22,6 +22,7 @@ public class HoaDonPanel extends VBox {
     private DatePicker pickerDate;
     private Label lblOrderInfo;
     private HoaDon selectedHd;
+    private TextField txtCustName, txtCustPhone, txtCustTaxCode, txtCustAddress, txtOrderNote;
 
     public HoaDonPanel() {
         setSpacing(15);
@@ -73,11 +74,11 @@ public class HoaDonPanel extends VBox {
         // RIGHT: Invoice detail & modification
         VBox right = new VBox(15);
         right.setPadding(new Insets(10));
-        right.setPrefWidth(550);
+        right.setPrefWidth(650);
 
         VBox formBox = new VBox(10);
-        formBox.setPrefWidth(320);
-        formBox.setMinWidth(320);
+        formBox.setPrefWidth(600);
+        formBox.setMinWidth(600);
         formBox.getStyleClass().add("card-panel");
         Label lblFormTitle = new Label("Chi Tiết Hóa Đơn");
         lblFormTitle.getStyleClass().add("sub-title");
@@ -88,17 +89,33 @@ public class HoaDonPanel extends VBox {
         
         javafx.scene.layout.ColumnConstraints col1 = new javafx.scene.layout.ColumnConstraints(95);
         javafx.scene.layout.ColumnConstraints col2 = new javafx.scene.layout.ColumnConstraints(175);
-        grid.getColumnConstraints().addAll(col1, col2);
+        javafx.scene.layout.ColumnConstraints col3 = new javafx.scene.layout.ColumnConstraints(100);
+        javafx.scene.layout.ColumnConstraints col4 = new javafx.scene.layout.ColumnConstraints(200);
+        grid.getColumnConstraints().addAll(col1, col2, col3, col4);
 
         txtHdId = new TextField();
-        txtHdId.setEditable(false);
+        txtHdId.setEditable(true);
         txtHdAmount = new TextField();
         txtHdAmount.setEditable(false);
         pickerDate = new DatePicker();
+        pickerDate.setDisable(true);
         comboPayMethod = new ComboBox<>(FXCollections.observableArrayList(PhuongThucThanhToan.values()));
+        comboPayMethod.setDisable(true);
         comboStatus = new ComboBox<>(FXCollections.observableArrayList(TrangThaiHoaDon.values()));
+        comboStatus.setDisable(true);
         lblOrderInfo = new Label("Thông tin đơn hàng liên quan: ");
         lblOrderInfo.setStyle("-fx-font-weight: bold; -fx-text-fill: #475569;");
+
+        txtCustName = new TextField();
+        txtCustName.setEditable(false);
+        txtCustPhone = new TextField();
+        txtCustPhone.setEditable(false);
+        txtCustTaxCode = new TextField();
+        txtCustTaxCode.setEditable(false);
+        txtCustAddress = new TextField();
+        txtCustAddress.setEditable(false);
+        txtOrderNote = new TextField();
+        txtOrderNote.setEditable(false);
 
         grid.add(new Label("Mã hóa đơn:"), 0, 0);
         grid.add(txtHdId, 1, 0);
@@ -110,6 +127,17 @@ public class HoaDonPanel extends VBox {
         grid.add(comboPayMethod, 1, 3);
         grid.add(new Label("Trạng thái:"), 0, 4);
         grid.add(comboStatus, 1, 4);
+
+        grid.add(new Label("Khách hàng:"), 2, 0);
+        grid.add(txtCustName, 3, 0);
+        grid.add(new Label("Số điện thoại:"), 2, 1);
+        grid.add(txtCustPhone, 3, 1);
+        grid.add(new Label("Mã số thuế:"), 2, 2);
+        grid.add(txtCustTaxCode, 3, 2);
+        grid.add(new Label("Địa chỉ khách:"), 2, 3);
+        grid.add(txtCustAddress, 3, 3);
+        grid.add(new Label("Ghi chú đơn:"), 2, 4);
+        grid.add(txtOrderNote, 3, 4);
 
         HBox btnBox = new HBox(10);
         btnBox.setAlignment(Pos.CENTER_RIGHT);
@@ -131,13 +159,17 @@ public class HoaDonPanel extends VBox {
 
         TableColumn<ChiTietDonHang, Integer> colCtQty = new TableColumn<>("SL Ri");
         colCtQty.setCellValueFactory(new PropertyValueFactory<>("soLuongRi"));
-        colCtQty.setPrefWidth(100);
+        colCtQty.setPrefWidth(80);
+
+        TableColumn<ChiTietDonHang, Double> colCtPrice = new TableColumn<>("Đơn Giá Ri");
+        colCtPrice.setCellValueFactory(new PropertyValueFactory<>("donGiaRi"));
+        colCtPrice.setPrefWidth(110);
 
         TableColumn<ChiTietDonHang, Double> colCtTotal = new TableColumn<>("Thành Tiền");
         colCtTotal.setCellValueFactory(new PropertyValueFactory<>("thanhTien"));
-        colCtTotal.setPrefWidth(130);
+        colCtTotal.setPrefWidth(120);
 
-        tableCtdh.getColumns().addAll(colCtSp, colCtQty, colCtTotal);
+        tableCtdh.getColumns().addAll(colCtSp, colCtQty, colCtPrice, colCtTotal);
 
         right.getChildren().addAll(formBox, new Label("Danh sách sản phẩm trong hóa đơn"), tableCtdh);
         split.getItems().addAll(left, right);
@@ -149,6 +181,7 @@ public class HoaDonPanel extends VBox {
             if (newVal != null) {
                 selectedHd = newVal;
                 txtHdId.setText(newVal.getMaHoaDon());
+                txtHdId.setEditable(true);
                 txtHdAmount.setText(String.format("%,.0f đ", newVal.getTongTienHoaDon()));
                 pickerDate.setValue(newVal.getNgayLap());
                 comboPayMethod.setValue(newVal.getPhuongThucThanhToan());
@@ -156,10 +189,28 @@ public class HoaDonPanel extends VBox {
 
                 DonHang dh = newVal.getDonHang();
                 if (dh != null) {
-                    lblOrderInfo.setText("Mã Đơn: " + dh.getMaDonHang() + " | KH: " + (dh.getKhachHang() != null ? dh.getKhachHang().getTenKhachHang() : "N/A"));
+                    lblOrderInfo.setText("Mã Đơn: " + dh.getMaDonHang());
+                    KhachHang kh = dh.getKhachHang();
+                    if (kh != null) {
+                        txtCustName.setText(kh.getTenKhachHang());
+                        txtCustPhone.setText(kh.getSdt());
+                        txtCustTaxCode.setText(kh.getMaSoThue() != null ? kh.getMaSoThue() : "");
+                        txtCustAddress.setText(kh.getDiaChiNha() != null ? kh.getDiaChiNha() : "");
+                    } else {
+                        txtCustName.clear();
+                        txtCustPhone.clear();
+                        txtCustTaxCode.clear();
+                        txtCustAddress.clear();
+                    }
+                    txtOrderNote.setText(dh.getGhiChu() != null ? dh.getGhiChu() : "");
                     tableCtdh.setItems(FXCollections.observableArrayList(service.getChiTietByDonHangId(dh.getMaDonHang())));
                 } else {
                     lblOrderInfo.setText("Thông tin đơn hàng liên quan: Không có");
+                    txtCustName.clear();
+                    txtCustPhone.clear();
+                    txtCustTaxCode.clear();
+                    txtCustAddress.clear();
+                    txtOrderNote.clear();
                     tableCtdh.setItems(FXCollections.emptyObservableList());
                 }
             }
@@ -170,22 +221,29 @@ public class HoaDonPanel extends VBox {
                 showAlert(Alert.AlertType.WARNING, "Lỗi thao tác", "Vui lòng chọn hóa đơn để cập nhật!");
                 return;
             }
-            LocalDate date = pickerDate.getValue();
-            PhuongThucThanhToan pm = comboPayMethod.getValue();
-            TrangThaiHoaDon status = comboStatus.getValue();
-
-            if (date == null || pm == null || status == null) {
-                showAlert(Alert.AlertType.WARNING, "Lỗi dữ liệu", "Vui lòng nhập đầy đủ thông tin!");
+            String newHdId = txtHdId.getText().trim();
+            if (newHdId.isEmpty()) {
+                showAlert(Alert.AlertType.WARNING, "Lỗi dữ liệu", "Mã hóa đơn không được để trống!");
                 return;
             }
 
-            selectedHd.setNgayLap(date);
-            selectedHd.setPhuongThucThanhToan(pm);
-            selectedHd.setTrangThaiHoaDon(status);
-            service.updateHoaDon(selectedHd);
+            // Nếu người dùng thay đổi mã hóa đơn
+            if (!newHdId.equals(selectedHd.getMaHoaDon())) {
+                boolean exists = service.getAllHoaDon().stream()
+                        .anyMatch(h -> h.getMaHoaDon().equalsIgnoreCase(newHdId));
+                if (exists) {
+                    showAlert(Alert.AlertType.ERROR, "Lỗi", "Mã hóa đơn mới đã tồn tại!");
+                    return;
+                }
+                
+                // Lưu lại thông tin cũ và đổi mã hóa đơn
+                service.deleteHoaDon(selectedHd.getMaHoaDon());
+                selectedHd.setMaHoaDon(newHdId);
+                service.addHoaDon(selectedHd);
+            }
 
             refreshData();
-            showAlert(Alert.AlertType.INFORMATION, "Thành công", "Đã cập nhật thông tin hóa đơn!");
+            showAlert(Alert.AlertType.INFORMATION, "Thành công", "Đã cập nhật mã hóa đơn!");
         });
 
         btnPrint.setOnAction(e -> {
@@ -204,15 +262,21 @@ public class HoaDonPanel extends VBox {
             if (dh != null && dh.getKhachHang() != null) {
                 receipt.append("Khách hàng: ").append(dh.getKhachHang().getTenKhachHang()).append("\n");
                 receipt.append("SĐT: ").append(dh.getKhachHang().getSdt()).append("\n");
+                receipt.append("MST: ").append(dh.getKhachHang().getMaSoThue() != null ? dh.getKhachHang().getMaSoThue() : "").append("\n");
+                receipt.append("Địa chỉ: ").append(dh.getKhachHang().getDiaChiNha() != null ? dh.getKhachHang().getDiaChiNha() : "").append("\n");
+            }
+            if (dh != null && dh.getGhiChu() != null && !dh.getGhiChu().isEmpty()) {
+                receipt.append("Ghi chú đơn: ").append(dh.getGhiChu()).append("\n");
             }
             receipt.append("-----------------------------------------\n");
-            receipt.append(String.format("%-20s %-8s %-12s\n", "Sản phẩm", "SL Ri", "Thành tiền"));
+            receipt.append(String.format("%-18s %-6s %-8s %-10s\n", "Sản phẩm", "SL Ri", "Đơn giá", "Thành tiền"));
             receipt.append("-----------------------------------------\n");
             List<ChiTietDonHang> items = tableCtdh.getItems();
             for (ChiTietDonHang item : items) {
-                receipt.append(String.format("%-20.20s %-8d %,.0f đ\n",
+                receipt.append(String.format("%-18.18s %-6d %,.0f %,.0f đ\n",
                         item.getSanPham().getTenSanPham(),
                         item.getSoLuongRi(),
+                        item.getDonGiaRi(),
                         item.getThanhTien()));
             }
             receipt.append("-----------------------------------------\n");
@@ -226,7 +290,7 @@ public class HoaDonPanel extends VBox {
             TextArea area = new TextArea(receipt.toString());
             area.setFont(javafx.scene.text.Font.font("Courier New", 12));
             area.setEditable(false);
-            area.setPrefSize(420, 480);
+            area.setPrefSize(450, 520);
 
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("In Hóa Đơn");
