@@ -5,6 +5,7 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.animation.Interpolator;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -243,7 +244,18 @@ public class MainFrame {
         showPanel(tongQuanPanel, btnTongQuan);
 
         // 3. Scene and Stage Setup
-        Scene scene = new Scene(root, 1280, 800);
+        StackPane mainStack = new StackPane();
+        mainStack.getChildren().add(root);
+
+        VBox toastContainer = new VBox(10);
+        toastContainer.setPickOnBounds(false); // Let mouse events pass through empty space
+        toastContainer.setAlignment(Pos.TOP_RIGHT);
+        toastContainer.setPadding(new Insets(20));
+        mainStack.getChildren().add(toastContainer);
+
+        com.xuongmay.util.NotificationUtils.init(toastContainer);
+
+        Scene scene = new Scene(mainStack, 1280, 800);
         // Load external CSS stylesheet
         String cssPath = getClass().getResource("/style.css") != null 
                 ? getClass().getResource("/style.css").toExternalForm() 

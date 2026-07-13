@@ -8,6 +8,8 @@ import com.xuongmay.service.NguyenLieuService;
 import com.xuongmay.ui.dialog.LoVaiDetailsDialog;
 import com.xuongmay.ui.dialog.LoVaiFormDialog;
 import com.xuongmay.ui.dialog.QuyTrinhLoVaiDialog;
+import com.xuongmay.util.NotificationUtils;
+import com.xuongmay.util.NotificationUtils.NotificationType;
 import javafx.animation.FadeTransition;
 import javafx.animation.ScaleTransition;
 import javafx.beans.property.SimpleStringProperty;
@@ -188,7 +190,8 @@ public class NguyenLieuPanel extends VBox {
                 return;
             }
 
-            if (selectedSupplier == null) {
+            boolean isNew = (selectedSupplier == null);
+            if (isNew) {
                 if (service.getNhaCungCapById(id) != null) {
                     showAlert(Alert.AlertType.ERROR, "Lỗi", "Mã NCC đã tồn tại!");
                     return;
@@ -203,6 +206,7 @@ public class NguyenLieuPanel extends VBox {
             }
             refreshSuppliers();
             clearSupplierForm();
+            NotificationUtils.show("Nhà cung cấp", isNew ? "Đã thêm nhà cung cấp mới thành công!" : "Đã cập nhật nhà cung cấp thành công!", NotificationType.SUCCESS);
         });
 
         btnDelete.setOnAction(e -> {
@@ -215,6 +219,7 @@ public class NguyenLieuPanel extends VBox {
                         service.deleteNhaCungCap(selectedSupplier.getMaNhaCungCap());
                         refreshSuppliers();
                         clearSupplierForm();
+                        NotificationUtils.show("Nhà cung cấp", "Đã xóa nhà cung cấp thành công!", NotificationType.SUCCESS);
                     }
                 });
             } else {
@@ -294,6 +299,7 @@ public class NguyenLieuPanel extends VBox {
         dialog.showAndWait().ifPresent(result -> {
             if (dialog.handleSave()) {
                 refreshLoVais();
+                NotificationUtils.show("Lô vải", lo == null ? "Đã thêm lô vải mới thành công!" : "Đã cập nhật thông tin lô vải!", NotificationType.SUCCESS);
             }
         });
     }
@@ -504,8 +510,7 @@ public class NguyenLieuPanel extends VBox {
         service.updateLoVai(lo);
         refreshLoVais();
         refreshCayVais();
-        showAlert(Alert.AlertType.INFORMATION, "Thành công",
-                "Đã cập nhật trạng thái lô vải '" + lo.getTenLo() + "' thành '" + newStatus.toString() + "'.");
+        NotificationUtils.show("Lô vải", "Đã cập nhật trạng thái lô vải '" + lo.getTenLo() + "' thành '" + newStatus.toString() + "'.", NotificationType.SUCCESS);
     }
 
     private void refreshLoVais() {

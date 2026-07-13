@@ -2,6 +2,8 @@ package com.xuongmay.ui.panel;
 
 import com.xuongmay.service.ThongKeService;
 import com.xuongmay.service.ThongKeService.*;
+import com.xuongmay.util.NotificationUtils;
+import com.xuongmay.util.NotificationUtils.NotificationType;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -100,13 +102,17 @@ public class ThongKePanel extends VBox {
                 ));
                 btn.setStyle("-fx-background-color: #1e40af; -fx-text-fill: white; -fx-background-radius: 6; -fx-padding: 6 14; -fx-cursor: hand; -fx-font-weight: bold;");
                 refreshData();
+                NotificationUtils.show("Bộ lọc", "Đã cập nhật dữ liệu theo: " + label.toLowerCase(), NotificationType.INFO);
             });
             toggleGroup.getChildren().add(btn);
         }
 
         Button btnRefresh = new Button("↺  Làm mới");
         btnRefresh.setStyle("-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-background-radius: 8; -fx-padding: 6 14; -fx-cursor: hand;");
-        btnRefresh.setOnAction(e -> refreshData());
+        btnRefresh.setOnAction(e -> {
+            refreshData();
+            NotificationUtils.show("Làm mới", "Toàn bộ dữ liệu thống kê đã được cập nhật!", NotificationType.SUCCESS);
+        });
 
         header.getChildren().addAll(titleBox, spacer, toggleGroup, btnRefresh);
         return header;

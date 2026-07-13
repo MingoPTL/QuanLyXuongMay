@@ -8,6 +8,8 @@ import com.xuongmay.ui.dialog.SanPhamDetailsDialog;
 import com.xuongmay.ui.dialog.SanPhamFormDialog;
 import com.xuongmay.ui.dialog.SanPhamProgressDialog;
 import com.xuongmay.ui.dialog.SanPhamActualQtyDialog;
+import com.xuongmay.util.NotificationUtils;
+import com.xuongmay.util.NotificationUtils.NotificationType;
 import javafx.animation.FadeTransition;
 import javafx.animation.ScaleTransition;
 import javafx.beans.property.SimpleStringProperty;
@@ -471,6 +473,7 @@ public class SanPhamPanel extends VBox {
         dialog.showAndWait().ifPresent(result -> {
             if (dialog.handleSave()) {
                 refreshProducts();
+                NotificationUtils.show("Sản phẩm", sp == null ? "Đã thêm sản phẩm mới thành công!" : "Đã cập nhật thông tin sản phẩm!", NotificationType.SUCCESS);
             }
         });
     }
@@ -492,8 +495,7 @@ public class SanPhamPanel extends VBox {
         sp.setTrangThaiSanPham(newStatus);
         spService.updateSanPham(sp);
         refreshProducts();
-        showAlert(Alert.AlertType.INFORMATION, "Thành công",
-                "Đã cập nhật trạng thái sản phẩm '" + sp.getTenSanPham() + "' thành '" + newStatus.toString() + "'.");
+        NotificationUtils.show("Quy trình", "Đã chuyển '" + sp.getTenSanPham() + "' sang khâu '" + newStatus.toString() + "'.", NotificationType.SUCCESS);
 
         if ((newStatus == TrangThaiSanPham.DangCat || newStatus == TrangThaiSanPham.DangMay || newStatus == TrangThaiSanPham.DangUi)
                 && onStatusChangedToAssignCallback != null) {
