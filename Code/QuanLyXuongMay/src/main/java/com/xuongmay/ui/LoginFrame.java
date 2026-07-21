@@ -44,6 +44,8 @@ public class LoginFrame {
     private PasswordField txtRegConfirmPass;
     private Label lblRegError;
     private Label lblRegSuccess;
+    private HBox strengthBarBox;
+    private Label lblStrengthText;
 
     public LoginFrame(Stage stage) {
         this.stage = stage;
@@ -205,7 +207,26 @@ public class LoginFrame {
         txtRegPass = new PasswordField();
         txtRegPass.setPromptText("Nhập mật khẩu...");
         txtRegPass.getStyleClass().add("login-input");
-        passField.getChildren().addAll(lblPass, txtRegPass);
+
+        // Password strength bar setup
+        strengthBarBox = new HBox();
+        strengthBarBox.getStyleClass().add("strength-bar-box");
+        for (int i = 0; i < 4; i++) {
+            Pane segment = new Pane();
+            segment.getStyleClass().add("strength-segment");
+            strengthBarBox.getChildren().add(segment);
+        }
+
+        lblStrengthText = new Label("Độ bảo mật: Chưa nhập");
+        lblStrengthText.getStyleClass().add("strength-lbl");
+
+        HBox strengthContainer = new HBox();
+        strengthContainer.getStyleClass().add("strength-container");
+        strengthContainer.getChildren().addAll(strengthBarBox, lblStrengthText);
+
+        txtRegPass.textProperty().addListener((ob, oldVal, newVal) -> updatePasswordStrength(newVal));
+
+        passField.getChildren().addAll(lblPass, txtRegPass, strengthContainer);
 
         VBox confirmField = new VBox(4);
         Label lblConfirm = new Label("Xác nhận mật khẩu");
@@ -366,5 +387,86 @@ public class LoginFrame {
         });
         
         fadeOut.play();
+    }
+
+    private void updatePasswordStrength(String password) {
+        int score = checkPasswordStrength(password);
+        
+        // Reset classes for all segments
+        for (int i = 0; i < strengthBarBox.getChildren().size(); i++) {
+            javafx.scene.Node node = strengthBarBox.getChildren().get(i);
+            node.getStyleClass().setAll("strength-segment");
+        }
+        
+        lblStrengthText.getStyleClass().setAll("strength-lbl");
+        
+        if (password == null || password.isEmpty()) {
+            lblStrengthText.setText("Độ bảo mật: Chưa nhập");
+            return;
+        }
+        
+        switch (score) {
+            case 1:
+                lblStrengthText.setText("Độ bảo mật: Yếu");
+                lblStrengthText.getStyleClass().add("strength-lbl-weak");
+                strengthBarBox.getChildren().get(0).getStyleClass().add("strength-segment-weak");
+                break;
+            case 2:
+                lblStrengthText.setText("Độ bảo mật: Trung bình");
+                lblStrengthText.getStyleClass().add("strength-lbl-medium");
+                strengthBarBox.getChildren().get(0).getStyleClass().add("strength-segment-medium");
+                strengthBarBox.getChildren().get(1).getStyleClass().add("strength-segment-medium");
+                break;
+            case 3:
+                lblStrengthText.setText("Độ bảo mật: Mạnh");
+                lblStrengthText.getStyleClass().add("strength-lbl-strong");
+                strengthBarBox.getChildren().get(0).getStyleClass().add("strength-segment-strong");
+                strengthBarBox.getChildren().get(1).getStyleClass().add("strength-segment-strong");
+                strengthBarBox.getChildren().get(2).getStyleClass().add("strength-segment-strong");
+                break;
+            case 4:
+                lblStrengthText.setText("Độ bảo mật: Rất mạnh");
+                lblStrengthText.getStyleClass().add("strength-lbl-very-strong");
+                strengthBarBox.getChildren().get(0).getStyleClass().add("strength-segment-very-strong");
+                strengthBarBox.getChildren().get(1).getStyleClass().add("strength-segment-very-strong");
+                strengthBarBox.getChildren().get(2).getStyleClass().add("strength-segment-very-strong");
+                strengthBarBox.getChildren().get(3).getStyleClass().add("strength-segment-very-strong");
+                break;
+        }
+    }
+
+    private int checkPasswordStrength(String password) {
+        if (password == null || password.isEmpty()) {
+            return 0;
+        }
+        if (password.length() < 6) {
+            return 1;
+        }
+        
+        int score = 1;
+        
+        boolean hasUppercase = !password.equals(password.toLowerCase());
+        boolean hasLowercase = !password.equals(password.toUpperCase());
+        boolean hasDigit = password.matches(".*\\d.*");
+        boolean hasSpecial = password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\",./<>?].*");
+        
+        if (password.length() >= 8) {
+            score++;
+        }
+        
+        int categories = 0;
+        if (hasUppercase) categories++;
+        if (hasLowercase) categories++;
+        if (hasDigit) categories++;
+        if (hasSpecial) categories++;
+        
+        if (categories >= 3) {
+            score++;
+        }
+        if (categories == 4 && password.length() >= 10) {
+            score++;
+        }
+        
+        return Math.min(score, 4);
     }
 }

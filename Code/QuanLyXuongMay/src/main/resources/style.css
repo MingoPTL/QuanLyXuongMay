@@ -1122,3 +1122,63 @@
     -fx-padding: 0;
 }
 
+/* === PASSWORD STRENGTH INDICATOR === */
+.strength-container {
+    -fx-spacing: 10;
+    -fx-alignment: center-left;
+    -fx-padding: 4 0 0 0;
+}
+
+.strength-bar-box {
+    -fx-spacing: 4;
+    -fx-alignment: center-left;
+}
+
+.strength-segment {
+    -fx-background-color: #cbd5e1; /* Gray 300 (Default inactive) */
+    -fx-background-radius: 2px;
+    -fx-pref-width: 32px;
+    -fx-pref-height: 4px;
+    -fx-min-width: 32px;
+    -fx-min-height: 4px;
+}
+
+.strength-segment-weak {
+    -fx-background-color: #ef4444; /* Red */
+}
+
+.strength-segment-medium {
+    -fx-background-color: #f97316; /* Orange */
+}
+
+.strength-segment-strong {
+    -fx-background-color: #84cc16; /* Lime/Light-green */
+}
+
+.strength-segment-very-strong {
+    -fx-background-color: #10b981; /* Emerald/Green */
+}
+
+.strength-lbl {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #94a3b8; /* Slate 400 */
+}
+
+.strength-lbl-weak {
+    -fx-text-fill: #ef4444;
+}
+
+.strength-lbl-medium {
+    -fx-text-fill: #f97316;
+}
+
+.strength-lbl-strong {
+    -fx-text-fill: #84cc16;
+}
+
+.strength-lbl-very-strong {
+    -fx-text-fill: #10b981;
+}
+
+
