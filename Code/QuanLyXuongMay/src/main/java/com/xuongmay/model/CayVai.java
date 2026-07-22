@@ -1,6 +1,7 @@
 package com.xuongmay.model;
 
 public class CayVai {
+    private Long   idCayVai; // IDENTITY PK từ DB (null khi tạo mới)
     private String tenCayVai;
     private String mauSac;
     private LoVai loVai;
@@ -20,6 +21,9 @@ public class CayVai {
         this.ghiChu = ghiChu;
         this.luotTraiVai = luotTraiVai;
     }
+
+    public Long getIdCayVai() { return idCayVai; }
+    public void setIdCayVai(Long idCayVai) { this.idCayVai = idCayVai; }
 
     public String getTenCayVai() {
         return tenCayVai;

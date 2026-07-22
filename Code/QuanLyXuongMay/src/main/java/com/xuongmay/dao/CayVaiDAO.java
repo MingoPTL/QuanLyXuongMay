@@ -2,65 +2,99 @@ package com.xuongmay.dao;
 
 import com.xuongmay.model.CayVai;
 import com.xuongmay.model.LoVai;
+import com.xuongmay.util.DatabaseConnection;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class CayVaiDAO {
-    private static final List<CayVai> list = new ArrayList<>();
-
-    static {
-        LoVaiDAO loDao = new LoVaiDAO();
-        List<LoVai> los = loDao.getAll();
-        if (los.size() >= 3) {
-            // Lô 1 (LV001)
-            list.add(new CayVai("CV001", "Đen", los.get(0), 100.5, "Kệ A1", "Kaki trơn màu đen", 2));
-            list.add(new CayVai("CV002", "Xanh đen", los.get(0), 120.0, "Kệ A1", "Kaki trơn màu xanh đen", 1));
-            list.add(new CayVai("CV003", "Xám", los.get(0), 95.2, "Kệ A2", "Kaki trơn màu xám", 3));
-
-            // Lô 2 (LV002)
-            list.add(new CayVai("CV004", "Trắng", los.get(1), 150.0, "Kệ B1", "Cotton 4 chiều màu trắng", 0));
-            list.add(new CayVai("CV005", "Đỏ đô", los.get(1), 140.5, "Kệ B2", "Cotton 4 chiều màu đỏ đô", 0));
-            list.add(new CayVai("CV006", "Vàng", los.get(1), 130.0, "Kệ B2", "Cotton 4 chiều màu vàng", 0));
-            list.add(new CayVai("CV007", "Xanh lá", los.get(1), 145.8, "Kệ B3", "Cotton 4 chiều màu xanh lá", 0));
-
-            // Lô 3 (LV003)
-            list.add(new CayVai("CV008", "Be", los.get(2), 80.0, "Kệ C1", "Linen hoa nhí màu be", 0));
-            list.add(new CayVai("CV009", "Xanh dương", los.get(2), 85.5, "Kệ C2", "Linen kẻ sọc xanh dương", 0));
-
-            // Lô 4 (LV004)
-            list.add(new CayVai("CV010", "Xanh Jean", los.get(3), 200.0, "Kệ D1", "Jean xanh co giãn", 5));
-        }
-    }
 
     public List<CayVai> getAll() {
-        return new ArrayList<>(list);
+        List<CayVai> list = new ArrayList<>();
+        String sql = "SELECT id_cay_vai, ten_cay_vai, mau_sac, ma_lo, chieu_dai, vi_tri, ghi_chu, luot_trai_vai FROM CayVai";
+        try (Statement st = DatabaseConnection.getConnection().createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            LoVaiDAO loDao = new LoVaiDAO();
+            while (rs.next()) list.add(map(rs, loDao));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
 
     public List<CayVai> getByLoVaiId(String loVaiId) {
-        return list.stream()
-                .filter(cv -> cv.getLoVai() != null && cv.getLoVai().getMaLo().equals(loVaiId))
-                .collect(Collectors.toList());
+        List<CayVai> list = new ArrayList<>();
+        String sql = "SELECT id_cay_vai, ten_cay_vai, mau_sac, ma_lo, chieu_dai, vi_tri, ghi_chu, luot_trai_vai FROM CayVai WHERE ma_lo=?";
+        try (PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement(sql)) {
+            ps.setString(1, loVaiId);
+            try (ResultSet rs = ps.executeQuery()) {
+                LoVaiDAO loDao = new LoVaiDAO();
+                while (rs.next()) list.add(map(rs, loDao));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
 
-    public CayVai getById(String id) {
-        return list.stream().filter(c -> c.getTenCayVai().equals(id)).findFirst().orElse(null);
+    public CayVai getById(String tenCayVai) {
+        // Lookup by name (legacy interface)
+        return getAll().stream()
+            .filter(cv -> cv.getTenCayVai().equals(tenCayVai))
+            .findFirst().orElse(null);
     }
 
     public void add(CayVai cv) {
-        list.add(cv);
+        String sql = "INSERT INTO CayVai (ten_cay_vai, mau_sac, ma_lo, chieu_dai, vi_tri, ghi_chu, luot_trai_vai) VALUES (?,?,?,?,?,?,?)";
+        try (PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, cv.getTenCayVai());
+            ps.setString(2, cv.getMauSac());
+            ps.setString(3, cv.getLoVai() != null ? cv.getLoVai().getMaLo() : null);
+            ps.setDouble(4, cv.getChieuDai());
+            ps.setString(5, cv.getViTri());
+            ps.setString(6, cv.getGhiChu());
+            ps.setInt(7, cv.getLuotTraiVai());
+            ps.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) cv.setIdCayVai(keys.getLong(1));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     public void update(CayVai cv) {
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).getTenCayVai().equals(cv.getTenCayVai())) {
-                list.set(i, cv);
-                return;
-            }
-        }
+        if (cv.getIdCayVai() == null) return;
+        String sql = "UPDATE CayVai SET ten_cay_vai=?, mau_sac=?, ma_lo=?, chieu_dai=?, vi_tri=?, ghi_chu=?, luot_trai_vai=? WHERE id_cay_vai=?";
+        try (PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement(sql)) {
+            ps.setString(1, cv.getTenCayVai());
+            ps.setString(2, cv.getMauSac());
+            ps.setString(3, cv.getLoVai() != null ? cv.getLoVai().getMaLo() : null);
+            ps.setDouble(4, cv.getChieuDai());
+            ps.setString(5, cv.getViTri());
+            ps.setString(6, cv.getGhiChu());
+            ps.setInt(7, cv.getLuotTraiVai());
+            ps.setLong(8, cv.getIdCayVai());
+            ps.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    public void delete(String id) {
-        list.removeIf(c -> c.getTenCayVai().equals(id));
+    public void delete(String tenCayVai) {
+        String sql = "DELETE FROM CayVai WHERE ten_cay_vai=?";
+        try (PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement(sql)) {
+            ps.setString(1, tenCayVai);
+            ps.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
+    private CayVai map(ResultSet rs, LoVaiDAO loDao) throws SQLException {
+        String maLo = rs.getString("ma_lo");
+        LoVai loVai = (maLo != null) ? loDao.getById(maLo) : null;
+        CayVai cv = new CayVai(
+            rs.getString("ten_cay_vai"),
+            rs.getString("mau_sac"),
+            loVai,
+            rs.getDouble("chieu_dai"),
+            rs.getString("vi_tri"),
+            rs.getString("ghi_chu"),
+            rs.getInt("luot_trai_vai")
+        );
+        cv.setIdCayVai(rs.getLong("id_cay_vai"));
+        return cv;
     }
 }

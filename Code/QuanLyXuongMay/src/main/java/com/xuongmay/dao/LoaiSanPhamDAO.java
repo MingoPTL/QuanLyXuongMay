@@ -1,40 +1,73 @@
 package com.xuongmay.dao;
 
 import com.xuongmay.model.LoaiSanPham;
+import com.xuongmay.util.DatabaseConnection;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class LoaiSanPhamDAO {
-    private static final List<LoaiSanPham> list = new ArrayList<>();
-
-    static {
-        list.add(new LoaiSanPham("LSP001", "Áo thun Polo", "Áo thun Polo cổ bẻ", 35000, "Vải Cotton 4 chiều"));
-        list.add(new LoaiSanPham("LSP002", "Quần Kaki Nam", "Quần dài kaki dáng ôm", 55000, "Vải Kaki Thun"));
-        list.add(new LoaiSanPham("LSP003", "Đầm Linen Nữ", "Đầm chữ A họa tiết hoa nhí", 70000, "Vải Linen"));
-    }
 
     public List<LoaiSanPham> getAll() {
-        return new ArrayList<>(list);
+        List<LoaiSanPham> list = new ArrayList<>();
+        String sql = "SELECT ma_loai, ten_loai, mo_ta, gia_goc, ghi_chu FROM LoaiSanPham";
+        try (Statement st = DatabaseConnection.getConnection().createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) list.add(map(rs));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
 
     public LoaiSanPham getById(String id) {
-        return list.stream().filter(l -> l.getMaLoai().equals(id)).findFirst().orElse(null);
+        String sql = "SELECT ma_loai, ten_loai, mo_ta, gia_goc, ghi_chu FROM LoaiSanPham WHERE ma_loai=?";
+        try (PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement(sql)) {
+            ps.setString(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return map(rs);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return null;
     }
 
     public void add(LoaiSanPham lsp) {
-        list.add(lsp);
+        String sql = "INSERT INTO LoaiSanPham (ma_loai, ten_loai, mo_ta, gia_goc, ghi_chu) VALUES (?,?,?,?,?)";
+        try (PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement(sql)) {
+            ps.setString(1, lsp.getMaLoai());
+            ps.setString(2, lsp.getTenLoai());
+            ps.setString(3, lsp.getMoTa());
+            ps.setDouble(4, lsp.getGiaGoc());
+            ps.setString(5, lsp.getGhiChu());
+            ps.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     public void update(LoaiSanPham lsp) {
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).getMaLoai().equals(lsp.getMaLoai())) {
-                list.set(i, lsp);
-                return;
-            }
-        }
+        String sql = "UPDATE LoaiSanPham SET ten_loai=?, mo_ta=?, gia_goc=?, ghi_chu=? WHERE ma_loai=?";
+        try (PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement(sql)) {
+            ps.setString(1, lsp.getTenLoai());
+            ps.setString(2, lsp.getMoTa());
+            ps.setDouble(3, lsp.getGiaGoc());
+            ps.setString(4, lsp.getGhiChu());
+            ps.setString(5, lsp.getMaLoai());
+            ps.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     public void delete(String id) {
-        list.removeIf(l -> l.getMaLoai().equals(id));
+        String sql = "DELETE FROM LoaiSanPham WHERE ma_loai=?";
+        try (PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement(sql)) {
+            ps.setString(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
+    private LoaiSanPham map(ResultSet rs) throws SQLException {
+        return new LoaiSanPham(
+            rs.getString("ma_loai"),
+            rs.getString("ten_loai"),
+            rs.getString("mo_ta"),
+            rs.getDouble("gia_goc"),
+            rs.getString("ghi_chu")
+        );
     }
 }

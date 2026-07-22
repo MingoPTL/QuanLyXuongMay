@@ -35,6 +35,10 @@ public class SanPhamService {
         return lspDao.getAll();
     }
 
+    public void addLoaiSanPham(LoaiSanPham lsp) {
+        lspDao.add(lsp);
+    }
+
     public void updateLoaiSanPham(LoaiSanPham lsp) {
         lspDao.update(lsp);
     }

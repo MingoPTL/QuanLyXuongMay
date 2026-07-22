@@ -170,7 +170,7 @@ public class HeThongPanel extends VBox {
                     return;
                 }
                 LoaiSanPham lsp = new LoaiSanPham(id, name, desc, basePrice, note);
-                spService.getAllLoaiSanPham().add(lsp); // add mockup
+                spService.addLoaiSanPham(lsp);
             } else {
                 selectedLsp.setTenLoai(name);
                 selectedLsp.setMoTa(desc);

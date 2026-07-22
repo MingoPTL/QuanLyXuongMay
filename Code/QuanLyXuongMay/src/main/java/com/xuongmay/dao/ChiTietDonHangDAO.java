@@ -3,41 +3,66 @@ package com.xuongmay.dao;
 import com.xuongmay.model.ChiTietDonHang;
 import com.xuongmay.model.DonHang;
 import com.xuongmay.model.SanPham;
+import com.xuongmay.util.DatabaseConnection;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ChiTietDonHangDAO {
-    private static final List<ChiTietDonHang> list = new ArrayList<>();
-
-    static {
-        DonHangDAO dhDao = new DonHangDAO();
-        SanPhamDAO spDao = new SanPhamDAO();
-        List<DonHang> dhs = dhDao.getAll();
-        List<SanPham> sps = spDao.getAll();
-        if (dhs.size() >= 2 && sps.size() >= 2) {
-            // DH001 details
-            list.add(new ChiTietDonHang(dhs.get(0), sps.get(0), 20, sps.get(0).getGiaThucTe(), 20 * sps.get(0).getGiaThucTe()));
-            // DH002 details
-            list.add(new ChiTietDonHang(dhs.get(1), sps.get(1), 20, sps.get(1).getGiaThucTe(), 20 * sps.get(1).getGiaThucTe()));
-        }
-    }
 
     public List<ChiTietDonHang> getAll() {
-        return new ArrayList<>(list);
+        List<ChiTietDonHang> list = new ArrayList<>();
+        String sql = "SELECT ma_don_hang, ma_san_pham, so_luong_ri, don_gia_ri, thanh_tien FROM ChiTietDonHang";
+        try (Statement st = DatabaseConnection.getConnection().createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            DonHangDAO dhDao = new DonHangDAO();
+            SanPhamDAO spDao = new SanPhamDAO();
+            while (rs.next()) list.add(map(rs, dhDao, spDao));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
 
     public List<ChiTietDonHang> getByDonHangId(String donHangId) {
-        return list.stream()
-                .filter(ct -> ct.getDonHang() != null && ct.getDonHang().getMaDonHang().equals(donHangId))
-                .collect(Collectors.toList());
+        List<ChiTietDonHang> list = new ArrayList<>();
+        String sql = "SELECT ma_don_hang, ma_san_pham, so_luong_ri, don_gia_ri, thanh_tien FROM ChiTietDonHang WHERE ma_don_hang=?";
+        try (PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement(sql)) {
+            ps.setString(1, donHangId);
+            try (ResultSet rs = ps.executeQuery()) {
+                DonHangDAO dhDao = new DonHangDAO();
+                SanPhamDAO spDao = new SanPhamDAO();
+                while (rs.next()) list.add(map(rs, dhDao, spDao));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
 
     public void add(ChiTietDonHang ct) {
-        list.add(ct);
+        String sql = "INSERT INTO ChiTietDonHang (ma_don_hang, ma_san_pham, so_luong_ri, don_gia_ri, thanh_tien) VALUES (?,?,?,?,?)";
+        try (PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement(sql)) {
+            ps.setString(1, ct.getDonHang() != null ? ct.getDonHang().getMaDonHang() : null);
+            ps.setString(2, ct.getSanPham() != null ? ct.getSanPham().getMaSanPham() : null);
+            ps.setInt(3, ct.getSoLuongRi());
+            ps.setDouble(4, ct.getDonGiaRi());
+            ps.setDouble(5, ct.getThanhTien());
+            ps.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     public void deleteByDonHangId(String donHangId) {
-        list.removeIf(ct -> ct.getDonHang() != null && ct.getDonHang().getMaDonHang().equals(donHangId));
+        String sql = "DELETE FROM ChiTietDonHang WHERE ma_don_hang=?";
+        try (PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement(sql)) {
+            ps.setString(1, donHangId);
+            ps.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
+    private ChiTietDonHang map(ResultSet rs, DonHangDAO dhDao, SanPhamDAO spDao) throws SQLException {
+        DonHang dh = dhDao.getById(rs.getString("ma_don_hang"));
+        SanPham sp = spDao.getById(rs.getString("ma_san_pham"));
+        return new ChiTietDonHang(dh, sp,
+            rs.getInt("so_luong_ri"),
+            rs.getDouble("don_gia_ri"),
+            rs.getDouble("thanh_tien")
+        );
     }
 }
