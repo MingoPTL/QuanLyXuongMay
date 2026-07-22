@@ -302,6 +302,11 @@ public class MainFrame {
         scrollHoaDon     = wrapInScroll(hoaDonPanel);
         scrollThongKe    = wrapInScroll(thongKePanel);
 
+        tongQuanPanel.setOnNavigateToThongKeCallback(() -> {
+            thongKePanel.refreshData();
+            showPanel(thongKePanel, btnThongKe);
+        });
+
         khachHangPanel.setOnCreateOrderCallback(kh -> {
             showPanel(sanPhamPanel, btnSanPham);
             sanPhamPanel.selectCustomerAndOrderTab(kh);

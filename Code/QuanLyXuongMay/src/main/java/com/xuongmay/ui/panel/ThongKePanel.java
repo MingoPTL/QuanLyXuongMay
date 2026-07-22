@@ -114,7 +114,11 @@ public class ThongKePanel extends VBox {
             NotificationUtils.show("Làm mới", "Toàn bộ dữ liệu thống kê đã được cập nhật!", NotificationType.SUCCESS);
         });
 
-        header.getChildren().addAll(titleBox, spacer, toggleGroup, btnRefresh);
+        Button btnExport = new Button("🖨️  Xuất báo cáo");
+        btnExport.setStyle("-fx-background-color: #1e40af; -fx-text-fill: white; -fx-background-radius: 8; -fx-padding: 6 14; -fx-cursor: hand; -fx-font-weight: bold;");
+        btnExport.setOnAction(e -> exportPdfReport());
+
+        header.getChildren().addAll(titleBox, spacer, toggleGroup, btnRefresh, btnExport);
         return header;
     }
 
@@ -602,6 +606,44 @@ public class ThongKePanel extends VBox {
         Label l = new Label(msg);
         l.setStyle("-fx-text-fill: #94a3b8; -fx-font-style: italic; -fx-padding: 12 10;");
         return l;
+    }
+
+    private void exportPdfReport() {
+        javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+        fileChooser.setTitle("Lưu báo cáo thống kê");
+        fileChooser.getExtensionFilters().add(
+            new javafx.stage.FileChooser.ExtensionFilter("PDF Files (*.pdf)", "*.pdf")
+        );
+        fileChooser.setInitialFileName("BaoCaoThongKe_" + currentRange + "_" + LocalDate.now().toString() + ".pdf");
+        
+        java.io.File file = fileChooser.showSaveDialog(this.getScene().getWindow());
+        if (file != null) {
+            try {
+                LocalDate[] range = getRange();
+                LocalDate from = range[0], to = range[1];
+                
+                double dt = service.getDoanhThu(from, to);
+                long soDon = service.getSoDonHang(from, to);
+                long riXuat = service.getTongRiXuatXuong(from, to);
+                double tiLe = service.getTiLeThanhToan(from, to);
+                
+                List<SanPhamStat> topSP = service.getTopSanPhamBanChay(from, to, 5);
+                List<KhachHangStat> topKH = service.getTopKhachHang(from, to, 5);
+                Map<String, Long> orderStatus = service.getPhanLoaiDonHang(from, to);
+                
+                com.xuongmay.util.ReportPdfExporter.exportReport(
+                    currentRange, from, to,
+                    dt, soDon, riXuat, tiLe,
+                    topSP, topKH, orderStatus, file
+                );
+                
+                NotificationUtils.show("Xuất báo cáo", "Đã xuất báo cáo PDF thành công!", NotificationType.SUCCESS);
+                com.xuongmay.util.ReportPdfExporter.openPdf(file);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                NotificationUtils.show("Lỗi", "Không thể xuất báo cáo: " + ex.getMessage(), NotificationType.ERROR);
+            }
+        }
     }
 
     private String formatMoney(double amount) {

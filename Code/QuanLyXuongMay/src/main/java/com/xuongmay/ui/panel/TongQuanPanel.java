@@ -19,6 +19,11 @@ public class TongQuanPanel extends VBox {
     private final NguyenLieuService nguyenLieuService = new NguyenLieuService();
     private final BanHangService banHangService = new BanHangService();
     private final SanPhamService sanPhamService = new SanPhamService();
+    private Runnable onNavigateToThongKeCallback;
+
+    public void setOnNavigateToThongKeCallback(Runnable callback) {
+        this.onNavigateToThongKeCallback = callback;
+    }
 
     // 6 Stat Cards
     private Label lblLoChuaSuDungVal, lblLoDangSuDungVal, lblLoRaSanPhamVal;
@@ -204,6 +209,11 @@ public class TongQuanPanel extends VBox {
         HBox.setHgrow(sp, Priority.ALWAYS);
         Label hint = new Label("Chi tiết →");
         hint.getStyleClass().add("link-btn");
+        hint.setOnMouseClicked(e -> {
+            if (onNavigateToThongKeCallback != null) {
+                onNavigateToThongKeCallback.run();
+            }
+        });
         chartHeader.getChildren().addAll(title, sp, hint);
 
         // BarChart

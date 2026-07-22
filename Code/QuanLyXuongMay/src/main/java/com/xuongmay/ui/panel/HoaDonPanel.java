@@ -385,6 +385,7 @@ public class HoaDonPanel extends VBox {
 
     public void refreshData() {
         tableHd.setItems(FXCollections.observableArrayList(service.getAllHoaDon()));
+        tableHd.refresh();
     }
 
     private void showAlert(Alert.AlertType type, String title, String content) {
