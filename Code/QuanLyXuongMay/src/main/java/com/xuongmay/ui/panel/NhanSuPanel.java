@@ -302,7 +302,34 @@ public class NhanSuPanel extends VBox {
         colPcDate.setPrefWidth(120);
 
         TableColumn<PhanCongSanPham, String> colPcQty = new TableColumn<>("Số Lượng");
-        colPcQty.setCellValueFactory(new PropertyValueFactory<>("soLuong"));
+        colPcQty.setCellValueFactory(cellData -> {
+            PhanCongSanPham pc = cellData.getValue();
+            if (pc == null) return new SimpleStringProperty("");
+            String qty = pc.getSoLuong();
+            if ("Tất cả".equalsIgnoreCase(qty)) {
+                SanPham sp = pc.getSanPham();
+                if (sp != null) {
+                    int otherAssigned = 0;
+                    for (PhanCongSanPham other : service.getAllPhanCong()) {
+                        if (!other.getMaPhanCong().equals(pc.getMaPhanCong())
+                                && other.getSanPham() != null
+                                && other.getSanPham().getMaSanPham().equals(sp.getMaSanPham())) {
+                            String oQty = other.getSoLuong();
+                            if (!"Tất cả".equalsIgnoreCase(oQty)) {
+                                try {
+                                    otherAssigned += Integer.parseInt(oQty);
+                                } catch (NumberFormatException e) {
+                                    // ignore
+                                }
+                            }
+                        }
+                    }
+                    int resolved = Math.max(0, sp.getTongSoBoDuKien() - otherAssigned);
+                    return new SimpleStringProperty("Tất cả (" + resolved + ")");
+                }
+            }
+            return new SimpleStringProperty(qty != null ? qty : "");
+        });
         colPcQty.setPrefWidth(100);
 
         tablePc.getColumns().addAll(colPcId, colPcSp, colPcSpStatus, colPcNv, colPcDate, colPcQty);

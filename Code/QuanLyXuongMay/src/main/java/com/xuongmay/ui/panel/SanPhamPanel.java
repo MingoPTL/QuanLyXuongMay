@@ -316,7 +316,20 @@ public class SanPhamPanel extends VBox {
                 if (pc.getNhanVien() != null) {
                     String qty = pc.getSoLuong();
                     if ("Tất cả".equalsIgnoreCase(qty)) {
-                        qty = String.valueOf(sp.getTongSoBoDuKien());
+                        int otherAssigned = 0;
+                        for (PhanCongSanPham other : spAssignments) {
+                            if (other != pc && other.getNhanVien() != null) {
+                                String oQty = other.getSoLuong();
+                                if (!"Tất cả".equalsIgnoreCase(oQty)) {
+                                    try {
+                                        otherAssigned += Integer.parseInt(oQty);
+                                    } catch (NumberFormatException e) {
+                                        // ignore
+                                    }
+                                }
+                            }
+                        }
+                        qty = String.valueOf(Math.max(0, sp.getTongSoBoDuKien() - otherAssigned));
                     }
                     workerList.add(pc.getNhanVien().getTenNhanVien() + " (" + qty + " bộ)");
                 }
